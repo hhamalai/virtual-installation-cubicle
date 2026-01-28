@@ -4,6 +4,7 @@
       ref="toolboxRef"
       @select-cable="onSelectCable"
       @cancel-cable="onCancelCable"
+      @select-component="onSelectComponent"
     />
     <div class="main">
       <header>
@@ -14,10 +15,12 @@
       </header>
       <Canvas
         :selected-cable="selectedCable"
+        :selected-component="selectedComponent"
         @wire-complete="onWireComplete"
+        @component-placed="onComponentPlaced"
       />
       <footer>
-        <p>Drag components from the toolbox • Click switches to toggle • Select a cable type then click terminals to connect</p>
+        <p>Drag or tap components to add • Click/tap switches to toggle • Tap terminals to connect wires</p>
       </footer>
     </div>
     <a
@@ -42,10 +45,12 @@ import { useCircuitStore } from './stores/circuit'
 
 interface ToolboxExposed {
   clearCableSelection: () => void
+  clearComponentSelection: () => void
 }
 
 const toolboxRef = ref<InstanceType<typeof Toolbox> & ToolboxExposed | null>(null)
 const selectedCable = ref<string | null>(null)
+const selectedComponent = ref<string | null>(null)
 
 const { clearAll: storeClearAll } = useCircuitStore()
 
@@ -57,6 +62,17 @@ const onCancelCable = (): void => {
   selectedCable.value = null
 }
 
+const onSelectComponent = (componentType: string): void => {
+  selectedComponent.value = componentType
+}
+
+const onComponentPlaced = (): void => {
+  selectedComponent.value = null
+  if (toolboxRef.value) {
+    toolboxRef.value.clearComponentSelection()
+  }
+}
+
 const onWireComplete = (): void => {
   // Keep cable selected for multiple connections
   // User can click cancel to deselect
@@ -65,8 +81,10 @@ const onWireComplete = (): void => {
 const clearAll = (): void => {
   storeClearAll()
   selectedCable.value = null
+  selectedComponent.value = null
   if (toolboxRef.value) {
     toolboxRef.value.clearCableSelection()
+    toolboxRef.value.clearComponentSelection()
   }
 }
 </script>
@@ -141,7 +159,10 @@ footer p {
   color: #666;
   opacity: 0.7;
   transition: opacity 0.2s, color 0.2s;
-  z-index: 100;
+  z-index: 1000;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
 }
 
 .github-link:hover {

@@ -16,6 +16,9 @@
       @mousemove="onMouseMove"
       @wheel.prevent="onWheel"
       @mousedown="onMouseDown"
+      @touchstart="onTouchStart"
+      @touchmove="onTouchMove"
+      @touchend="onTouchEnd"
     >
       <!-- Grid pattern -->
       <defs>
@@ -121,10 +124,12 @@ import Cable from './wiring/Cable.vue'
 
 const props = defineProps<{
   selectedCable: string | null
+  selectedComponent: string | null
 }>()
 
 const emit = defineEmits<{
   'wire-complete': []
+  'component-placed': []
 }>()
 
 interface PendingWire {
@@ -318,6 +323,61 @@ const onMouseUp = (): void => {
   }
 }
 
+// Touch event state
+const touchStartPos = ref<Point | null>(null)
+const isTouchDragging = ref(false)
+
+const onTouchStart = (event: TouchEvent): void => {
+  if (event.touches.length === 1) {
+    const touch = event.touches[0]
+    touchStartPos.value = { x: touch.clientX, y: touch.clientY }
+    isTouchDragging.value = false
+  }
+}
+
+const onTouchMove = (event: TouchEvent): void => {
+  if (event.touches.length === 1 && touchStartPos.value) {
+    const touch = event.touches[0]
+    const dx = Math.abs(touch.clientX - touchStartPos.value.x)
+    const dy = Math.abs(touch.clientY - touchStartPos.value.y)
+    // If moved more than 10px, it's a drag not a tap
+    if (dx > 10 || dy > 10) {
+      isTouchDragging.value = true
+    }
+
+    // Update mouse position for wire drawing
+    const pos = getSvgPoint(touch.clientX, touch.clientY)
+    mousePos.value = pos
+  }
+
+  // Two-finger pan
+  if (event.touches.length === 2) {
+    event.preventDefault()
+    // Could implement pinch-to-zoom here
+  }
+}
+
+const onTouchEnd = (event: TouchEvent): void => {
+  // Only handle as tap if it wasn't a drag
+  if (!isTouchDragging.value && touchStartPos.value && event.changedTouches.length === 1) {
+    const touch = event.changedTouches[0]
+    const target = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement
+
+    // Check if tapped on an element
+    const clickedOnElement = target?.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .cable-bundle')
+
+    // Handle tap-to-place component (for touch devices)
+    if (props.selectedComponent && !clickedOnElement && !target?.closest('.terminal')) {
+      const pos = getSvgPoint(touch.clientX, touch.clientY)
+      addElement(props.selectedComponent, pos.x - 30, pos.y - 20)
+      emit('component-placed')
+    }
+  }
+
+  touchStartPos.value = null
+  isTouchDragging.value = false
+}
+
 const onWheel = (event: WheelEvent): void => {
   const scaleFactor = event.deltaY > 0 ? 1.1 : 0.9
   const mousePoint = getSvgPoint(event.clientX, event.clientY)
@@ -444,32 +504,24 @@ const onElementMouseDown = (event: MouseEvent, element: Element): void => {
 
     // Store control points for wires connected to selected elements
     groupDragControlPoints.value.clear()
-    console.log('Selected elements:', Array.from(selectedElementIds.value))
-    console.log('Cables:', cables.value)
     for (const cable of cables.value) {
       cable.wires.forEach((wire, wireIndex) => {
-        console.log('Wire:', wire, 'controlPoints:', wire.controlPoints)
         if (!wire.from || !wire.to) return
 
         // Check if both endpoints are connected to selected elements
         const fromSelected = selectedElementIds.value.has(wire.from.elementId)
         const toSelected = selectedElementIds.value.has(wire.to.elementId)
-        console.log('from:', wire.from.elementId, 'selected:', fromSelected)
-        console.log('to:', wire.to.elementId, 'selected:', toSelected)
 
         // Only move control points if both ends are in the selection
         if (fromSelected && toSelected && wire.controlPoints) {
-          console.log('Both selected, storing control points')
           wire.controlPoints.forEach((point, pointIndex) => {
             // Use | as separator since cable IDs contain dashes
             const key = `${cable.id}|${wireIndex}|${pointIndex}`
-            console.log('Storing control point:', key, point)
             groupDragControlPoints.value.set(key, { x: point.x, y: point.y })
           })
         }
       })
     }
-    console.log('Stored control points:', groupDragControlPoints.value.size)
     return
   }
 
@@ -541,6 +593,14 @@ const onCanvasClick = (event: MouseEvent): void => {
 
   // Check if clicked on an element (not empty canvas)
   const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .cable-bundle')
+
+  // Handle tap-to-place component (for touch devices)
+  if (props.selectedComponent && !clickedOnElement && !target.closest('.terminal')) {
+    const pos = getSvgPoint(event.clientX, event.clientY)
+    addElement(props.selectedComponent, pos.x - 30, pos.y - 20)
+    emit('component-placed')
+    return
+  }
 
   if (wiringMode.value) {
     if (target.closest('.terminal')) {

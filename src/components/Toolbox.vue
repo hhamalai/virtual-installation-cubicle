@@ -2,9 +2,14 @@
   <div class="toolbox">
     <h3>Components</h3>
 
+    <div v-if="selectedComponent" class="component-info">
+      <p>Tap on canvas to place component</p>
+      <button @click="cancelComponent">Cancel</button>
+    </div>
+
     <div class="section">
       <h4>Power</h4>
-      <div class="tool-item" draggable="true" @dragstart="onDragStart($event, 'power-input')">
+      <div class="tool-item" :class="{ selected: selectedComponent === 'power-input' }" draggable="true" @dragstart="onDragStart($event, 'power-input')" @click="onComponentTap('power-input')">
         <svg width="50" height="30" viewBox="0 0 70 35">
           <rect x="5" y="5" width="60" height="25" rx="3" fill="#f5f5f5" stroke="#333" stroke-width="1"/>
           <circle cx="15" cy="18" r="4" fill="#fff" stroke="#333" stroke-width="1.5"/>
@@ -17,7 +22,7 @@
 
     <div class="section">
       <h4>Lights</h4>
-      <div class="tool-item" draggable="true" @dragstart="onDragStart($event, 'light')">
+      <div class="tool-item" :class="{ selected: selectedComponent === 'light' }" draggable="true" @dragstart="onDragStart($event, 'light')" @click="onComponentTap('light')">
         <svg width="40" height="40" viewBox="0 0 40 40">
           <circle cx="20" cy="18" r="14" fill="#fff" stroke="#333" stroke-width="1.5"/>
           <line x1="10" y1="8" x2="30" y2="28" stroke="#333" stroke-width="1"/>
@@ -25,7 +30,7 @@
         </svg>
         <span>Light (2-wire)</span>
       </div>
-      <div class="tool-item" draggable="true" @dragstart="onDragStart($event, 'light-grounded')">
+      <div class="tool-item" :class="{ selected: selectedComponent === 'light-grounded' }" draggable="true" @dragstart="onDragStart($event, 'light-grounded')" @click="onComponentTap('light-grounded')">
         <svg width="40" height="40" viewBox="0 0 40 40">
           <circle cx="20" cy="18" r="14" fill="#fff" stroke="#333" stroke-width="1.5"/>
           <line x1="10" y1="8" x2="30" y2="28" stroke="#333" stroke-width="1"/>
@@ -38,7 +43,7 @@
 
     <div class="section">
       <h4>Switches</h4>
-      <div class="tool-item" draggable="true" @dragstart="onDragStart($event, 'switch1')">
+      <div class="tool-item" :class="{ selected: selectedComponent === 'switch1' }" draggable="true" @dragstart="onDragStart($event, 'switch1')" @click="onComponentTap('switch1')">
         <svg width="40" height="30" viewBox="0 0 60 30">
           <circle cx="10" cy="15" r="3" fill="#333"/>
           <circle cx="45" cy="15" r="3" fill="#666"/>
@@ -46,7 +51,7 @@
         </svg>
         <span>Type 1 (On/Off)</span>
       </div>
-      <div class="tool-item" draggable="true" @dragstart="onDragStart($event, 'switch5')">
+      <div class="tool-item" :class="{ selected: selectedComponent === 'switch5' }" draggable="true" @dragstart="onDragStart($event, 'switch5')" @click="onComponentTap('switch5')">
         <svg width="40" height="35" viewBox="0 0 60 40">
           <circle cx="10" cy="20" r="3" fill="#333"/>
           <circle cx="45" cy="8" r="2.5" fill="#666"/>
@@ -55,7 +60,7 @@
         </svg>
         <span>Type 5 (Two-way)</span>
       </div>
-      <div class="tool-item" draggable="true" @dragstart="onDragStart($event, 'switch6')">
+      <div class="tool-item" :class="{ selected: selectedComponent === 'switch6' }" draggable="true" @dragstart="onDragStart($event, 'switch6')" @click="onComponentTap('switch6')">
         <svg width="40" height="35" viewBox="0 0 60 40">
           <circle cx="10" cy="20" r="3" fill="#333"/>
           <circle cx="45" cy="8" r="2.5" fill="#666"/>
@@ -64,7 +69,7 @@
         </svg>
         <span>Type 6 (Two-way)</span>
       </div>
-      <div class="tool-item" draggable="true" @dragstart="onDragStart($event, 'switch66')">
+      <div class="tool-item" :class="{ selected: selectedComponent === 'switch66' }" draggable="true" @dragstart="onDragStart($event, 'switch66')" @click="onComponentTap('switch66')">
         <svg width="40" height="45" viewBox="0 0 60 55">
           <circle cx="10" cy="12" r="2.5" fill="#333"/>
           <circle cx="45" cy="6" r="2" fill="#666"/>
@@ -78,7 +83,7 @@
         </svg>
         <span>Type 6+6 (Double)</span>
       </div>
-      <div class="tool-item" draggable="true" @dragstart="onDragStart($event, 'switch7')">
+      <div class="tool-item" :class="{ selected: selectedComponent === 'switch7' }" draggable="true" @dragstart="onDragStart($event, 'switch7')" @click="onComponentTap('switch7')">
         <svg width="40" height="35" viewBox="0 0 60 40">
           <circle cx="10" cy="10" r="2.5" fill="#333"/>
           <circle cx="10" cy="30" r="2.5" fill="#333"/>
@@ -114,7 +119,7 @@
 
     <div class="section">
       <h4>Cable Bundles</h4>
-      <div class="tool-item" draggable="true" @dragstart="onDragStart($event, 'cable-mmj3')">
+      <div class="tool-item" :class="{ selected: selectedComponent === 'cable-mmj3' }" draggable="true" @dragstart="onDragStart($event, 'cable-mmj3')" @click="onComponentTap('cable-mmj3')">
         <div class="cable-preview">
           <div class="wire-color" style="background-color: #d32f2f"></div>
           <div class="wire-color" style="background-color: #1976d2"></div>
@@ -122,7 +127,7 @@
         </div>
         <span>MMJ 3×1.5</span>
       </div>
-      <div class="tool-item" draggable="true" @dragstart="onDragStart($event, 'cable-mmj5')">
+      <div class="tool-item" :class="{ selected: selectedComponent === 'cable-mmj5' }" draggable="true" @dragstart="onDragStart($event, 'cable-mmj5')" @click="onComponentTap('cable-mmj5')">
         <div class="cable-preview">
           <div class="wire-color" style="background-color: #d32f2f"></div>
           <div class="wire-color" style="background-color: #212121"></div>
@@ -132,7 +137,7 @@
         </div>
         <span>MMJ 5×1.5</span>
       </div>
-      <div class="tool-item" draggable="true" @dragstart="onDragStart($event, 'cable-omm')">
+      <div class="tool-item" :class="{ selected: selectedComponent === 'cable-omm' }" draggable="true" @dragstart="onDragStart($event, 'cable-omm')" @click="onComponentTap('cable-omm')">
         <div class="cable-preview">
           <div class="wire-color" style="background-color: #e91e63"></div>
           <div class="wire-color" style="background-color: #9c27b0"></div>
@@ -155,15 +160,23 @@ const emit = defineEmits<{
   'drag-start': [type: string]
   'select-cable': [type: string]
   'cancel-cable': []
+  'select-component': [type: string]
 }>()
 
 const selectedCable = ref<string | null>(null)
+const selectedComponent = ref<string | null>(null)
 
 const onDragStart = (event: DragEvent, type: string): void => {
   if (event.dataTransfer) {
     event.dataTransfer.setData('elementType', type)
     event.dataTransfer.effectAllowed = 'copy'
   }
+}
+
+// For touch devices: tap to select component, then tap canvas to place
+const onComponentTap = (type: string): void => {
+  selectedComponent.value = type
+  emit('select-component', type)
 }
 
 const selectCable = (type: string): void => {
@@ -176,9 +189,19 @@ const cancelCable = (): void => {
   emit('cancel-cable')
 }
 
+const cancelComponent = (): void => {
+  selectedComponent.value = null
+}
+
 defineExpose({
   clearCableSelection: (): void => {
     selectedCable.value = null
+  },
+  clearComponentSelection: (): void => {
+    selectedComponent.value = null
+  },
+  getSelectedComponent: (): string | null => {
+    return selectedComponent.value
   }
 })
 </script>
@@ -283,5 +306,37 @@ h4 {
 
 .cable-info button:hover {
   background: #f57c00;
+}
+
+.component-info {
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #e3f2fd;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.component-info p {
+  margin: 0 0 8px 0;
+  color: #1565c0;
+}
+
+.component-info button {
+  padding: 4px 12px;
+  border: none;
+  background: #1976d2;
+  color: white;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.component-info button:hover {
+  background: #1565c0;
+}
+
+.tool-item.selected {
+  border-color: #1976d2;
+  background: #e3f2fd;
 }
 </style>
