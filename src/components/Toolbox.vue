@@ -180,8 +180,14 @@ const onComponentTap = (type: string): void => {
 }
 
 const selectCable = (type: string): void => {
-  selectedCable.value = type
-  emit('select-cable', type)
+  // Toggle: if already selected, deselect and cancel
+  if (selectedCable.value === type) {
+    selectedCable.value = null
+    emit('cancel-cable')
+  } else {
+    selectedCable.value = type
+    emit('select-cable', type)
+  }
 }
 
 const cancelCable = (): void => {

@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, type Component } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, type Component } from 'vue'
 import { useCircuitStore } from '../stores/circuit'
 import { useConnections } from '../composables/useConnections'
 import { useDrag } from '../composables/useDrag'
@@ -193,6 +193,13 @@ const cables = computed(() => state.cables)
 const wiringMode = computed(() => state.wiringMode)
 
 const { getWirePath, getTerminalPosition, getWireEndpoints } = useConnections(state)
+
+// Clear pending wire when wiring mode is canceled externally
+watch(wiringMode, (newValue) => {
+  if (!newValue) {
+    pendingWire.value = null
+  }
+})
 
 const componentMap: Record<string, Component> = {
   'power-input': PowerInput,
@@ -327,11 +334,40 @@ const onMouseUp = (): void => {
 const touchStartPos = ref<Point | null>(null)
 const isTouchDragging = ref(false)
 
+// Pinch-to-zoom and two-finger pan state
+const pinchStartDistance = ref<number | null>(null)
+const pinchStartMidpoint = ref<Point | null>(null)
+const pinchStartViewBox = ref<ViewBox | null>(null)
+const lastPinchMidpoint = ref<Point | null>(null)
+
 const onTouchStart = (event: TouchEvent): void => {
   if (event.touches.length === 1) {
     const touch = event.touches[0]
     touchStartPos.value = { x: touch.clientX, y: touch.clientY }
     isTouchDragging.value = false
+  }
+
+  // Initialize pinch-to-zoom and two-finger pan
+  if (event.touches.length === 2) {
+    event.preventDefault()
+    const touch1 = event.touches[0]
+    const touch2 = event.touches[1]
+
+    // Calculate initial distance between fingers
+    const dx = touch2.clientX - touch1.clientX
+    const dy = touch2.clientY - touch1.clientY
+    pinchStartDistance.value = Math.sqrt(dx * dx + dy * dy)
+
+    // Calculate midpoint (in client coordinates)
+    const midpoint = {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2
+    }
+    pinchStartMidpoint.value = midpoint
+    lastPinchMidpoint.value = midpoint
+
+    // Store initial viewBox
+    pinchStartViewBox.value = { ...viewBox.value }
   }
 }
 
@@ -350,16 +386,66 @@ const onTouchMove = (event: TouchEvent): void => {
     mousePos.value = pos
   }
 
-  // Two-finger pan
-  if (event.touches.length === 2) {
+  // Pinch-to-zoom and two-finger pan
+  if (event.touches.length === 2 && pinchStartDistance.value && lastPinchMidpoint.value) {
     event.preventDefault()
-    // Could implement pinch-to-zoom here
+
+    const touch1 = event.touches[0]
+    const touch2 = event.touches[1]
+
+    // Calculate current distance between fingers
+    const dx = touch2.clientX - touch1.clientX
+    const dy = touch2.clientY - touch1.clientY
+    const currentDistance = Math.sqrt(dx * dx + dy * dy)
+
+    // Calculate current midpoint
+    const currentMidpoint = {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2
+    }
+
+    // Calculate incremental pan (in screen pixels, convert to viewBox units)
+    const containerWidth = containerRef.value?.offsetWidth || 1
+    const containerHeight = containerRef.value?.offsetHeight || 1
+    const panDx = (lastPinchMidpoint.value.x - currentMidpoint.x) * (viewBox.value.width / containerWidth)
+    const panDy = (lastPinchMidpoint.value.y - currentMidpoint.y) * (viewBox.value.height / containerHeight)
+
+    // Apply pan
+    viewBox.value.x += panDx
+    viewBox.value.y += panDy
+
+    // Calculate scale factor for zoom (inverse: larger distance = zoom in = smaller viewBox)
+    const scale = pinchStartDistance.value / currentDistance
+
+    if (pinchStartViewBox.value) {
+      const newWidth = pinchStartViewBox.value.width * scale
+      const newHeight = pinchStartViewBox.value.height * scale
+
+      // Only apply zoom if within limits
+      if (newWidth >= 200 && newWidth <= 5000) {
+        // Get the SVG point at the current midpoint before resizing
+        const svgMidpoint = getSvgPoint(currentMidpoint.x, currentMidpoint.y)
+
+        // Apply new dimensions
+        viewBox.value.width = newWidth
+        viewBox.value.height = newHeight
+
+        // Adjust position to zoom towards the midpoint
+        viewBox.value.x = svgMidpoint.x - (newWidth / 2)
+        viewBox.value.y = svgMidpoint.y - (newHeight / 2)
+
+        zoom.value = 1200 / newWidth
+      }
+    }
+
+    // Update last midpoint for next incremental pan
+    lastPinchMidpoint.value = currentMidpoint
   }
 }
 
 const onTouchEnd = (event: TouchEvent): void => {
-  // Only handle as tap if it wasn't a drag
-  if (!isTouchDragging.value && touchStartPos.value && event.changedTouches.length === 1) {
+  // Only handle as tap if it wasn't a drag and not pinching
+  if (!isTouchDragging.value && touchStartPos.value && event.changedTouches.length === 1 && !pinchStartDistance.value) {
     const touch = event.changedTouches[0]
     const target = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement
 
@@ -376,6 +462,14 @@ const onTouchEnd = (event: TouchEvent): void => {
 
   touchStartPos.value = null
   isTouchDragging.value = false
+
+  // Reset pinch state when touches end
+  if (event.touches.length < 2) {
+    pinchStartDistance.value = null
+    pinchStartMidpoint.value = null
+    pinchStartViewBox.value = null
+    lastPinchMidpoint.value = null
+  }
 }
 
 const onWheel = (event: WheelEvent): void => {

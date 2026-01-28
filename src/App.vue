@@ -52,7 +52,7 @@ const toolboxRef = ref<InstanceType<typeof Toolbox> & ToolboxExposed | null>(nul
 const selectedCable = ref<string | null>(null)
 const selectedComponent = ref<string | null>(null)
 
-const { clearAll: storeClearAll } = useCircuitStore()
+const { clearAll: storeClearAll, cancelWiring } = useCircuitStore()
 
 const onSelectCable = (cableType: string): void => {
   selectedCable.value = cableType
@@ -60,6 +60,7 @@ const onSelectCable = (cableType: string): void => {
 
 const onCancelCable = (): void => {
   selectedCable.value = null
+  cancelWiring()
 }
 
 const onSelectComponent = (componentType: string): void => {
