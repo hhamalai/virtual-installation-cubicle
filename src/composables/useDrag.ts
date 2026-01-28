@@ -1,8 +1,8 @@
 import { ref, Ref } from 'vue'
 import type { Element, Point } from '../types'
 
-type GetSvgPointFn = (clientX: number, clientY: number) => Point
-type OnUpdateFn = (element: Element, x: number, y: number, isDone: boolean) => void
+type GetSvgPointFn = (_clientX: number, _clientY: number) => Point
+type OnUpdateFn = (_element: Element, _x: number, _y: number, _isDone: boolean) => void
 
 export function useDrag(getSvgPoint: GetSvgPointFn, onUpdate: OnUpdateFn) {
   const isDragging: Ref<boolean> = ref(false)
