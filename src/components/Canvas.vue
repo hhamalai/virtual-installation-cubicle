@@ -32,7 +32,20 @@
       <rect x="-5000" y="-5000" width="10000" height="10000" fill="url(#grid)"/>
       <rect x="-5000" y="-5000" width="10000" height="10000" fill="url(#grid-large)"/>
 
-      <!-- Cables/Wires -->
+      <!-- Elements (rendered first, so wires appear on top) -->
+      <g v-for="element in elements" :key="element.id">
+        <component
+          :is="getComponentType(element.type)"
+          :element="element"
+          :selected="selectedElementId === element.id || selectedElementIds.has(element.id)"
+          @mousedown="onElementMouseDown($event, element)"
+          @terminal-click="onTerminalClick"
+          @toggle="(switchIndex: number | undefined) => handleToggle(element.id, switchIndex)"
+          @delete="removeElement(element.id)"
+        />
+      </g>
+
+      <!-- Cables/Wires (on top of elements) -->
       <Cable
         v-for="cable in cables"
         :key="cable.id"
@@ -62,19 +75,6 @@
           fill="#ff9800"
           stroke="#fff"
           stroke-width="1"
-        />
-      </g>
-
-      <!-- Elements -->
-      <g v-for="element in elements" :key="element.id">
-        <component
-          :is="getComponentType(element.type)"
-          :element="element"
-          :selected="selectedElementId === element.id || selectedElementIds.has(element.id)"
-          @mousedown="onElementMouseDown($event, element)"
-          @terminal-click="onTerminalClick"
-          @toggle="(switchIndex: number | undefined) => handleToggle(element.id, switchIndex)"
-          @delete="removeElement(element.id)"
         />
       </g>
 
