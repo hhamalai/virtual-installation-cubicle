@@ -338,7 +338,6 @@ const isTouchDragging = ref(false)
 const pinchStartDistance = ref<number | null>(null)
 const pinchStartMidpoint = ref<Point | null>(null)
 const pinchStartViewBox = ref<ViewBox | null>(null)
-const lastPinchMidpoint = ref<Point | null>(null)
 
 const onTouchStart = (event: TouchEvent): void => {
   if (event.touches.length === 1) {
@@ -359,12 +358,10 @@ const onTouchStart = (event: TouchEvent): void => {
     pinchStartDistance.value = Math.sqrt(dx * dx + dy * dy)
 
     // Calculate midpoint (in client coordinates)
-    const midpoint = {
+    pinchStartMidpoint.value = {
       x: (touch1.clientX + touch2.clientX) / 2,
       y: (touch1.clientY + touch2.clientY) / 2
     }
-    pinchStartMidpoint.value = midpoint
-    lastPinchMidpoint.value = midpoint
 
     // Store initial viewBox
     pinchStartViewBox.value = { ...viewBox.value }
@@ -387,59 +384,53 @@ const onTouchMove = (event: TouchEvent): void => {
   }
 
   // Pinch-to-zoom and two-finger pan
-  if (event.touches.length === 2 && pinchStartDistance.value && lastPinchMidpoint.value) {
+  if (event.touches.length === 2 && pinchStartDistance.value && pinchStartMidpoint.value && pinchStartViewBox.value) {
     event.preventDefault()
 
     const touch1 = event.touches[0]
     const touch2 = event.touches[1]
+    const container = containerRef.value
+    if (!container) return
+
+    const containerWidth = container.offsetWidth
+    const containerHeight = container.offsetHeight
 
     // Calculate current distance between fingers
     const dx = touch2.clientX - touch1.clientX
     const dy = touch2.clientY - touch1.clientY
     const currentDistance = Math.sqrt(dx * dx + dy * dy)
 
-    // Calculate current midpoint
+    // Calculate current midpoint (in client/screen coordinates, relative to container)
+    const rect = container.getBoundingClientRect()
     const currentMidpoint = {
-      x: (touch1.clientX + touch2.clientX) / 2,
-      y: (touch1.clientY + touch2.clientY) / 2
+      x: ((touch1.clientX + touch2.clientX) / 2) - rect.left,
+      y: ((touch1.clientY + touch2.clientY) / 2) - rect.top
+    }
+    const startMidpoint = {
+      x: pinchStartMidpoint.value.x - rect.left,
+      y: pinchStartMidpoint.value.y - rect.top
     }
 
-    // Calculate incremental pan (in screen pixels, convert to viewBox units)
-    const containerWidth = containerRef.value?.offsetWidth || 1
-    const containerHeight = containerRef.value?.offsetHeight || 1
-    const panDx = (lastPinchMidpoint.value.x - currentMidpoint.x) * (viewBox.value.width / containerWidth)
-    const panDy = (lastPinchMidpoint.value.y - currentMidpoint.y) * (viewBox.value.height / containerHeight)
-
-    // Apply pan
-    viewBox.value.x += panDx
-    viewBox.value.y += panDy
-
-    // Calculate scale factor for zoom (inverse: larger distance = zoom in = smaller viewBox)
+    // Calculate scale factor (larger distance = zoom in = smaller viewBox dimensions)
     const scale = pinchStartDistance.value / currentDistance
 
-    if (pinchStartViewBox.value) {
-      const newWidth = pinchStartViewBox.value.width * scale
-      const newHeight = pinchStartViewBox.value.height * scale
+    // Calculate new viewBox dimensions
+    const newWidth = pinchStartViewBox.value.width * scale
+    const newHeight = pinchStartViewBox.value.height * scale
 
-      // Only apply zoom if within limits
-      if (newWidth >= 200 && newWidth <= 5000) {
-        // Get the SVG point at the current midpoint before resizing
-        const svgMidpoint = getSvgPoint(currentMidpoint.x, currentMidpoint.y)
+    // Limit zoom
+    if (newWidth < 200 || newWidth > 5000) return
 
-        // Apply new dimensions
-        viewBox.value.width = newWidth
-        viewBox.value.height = newHeight
+    // Calculate the SVG point that was under the initial midpoint
+    const anchorSvgX = pinchStartViewBox.value.x + (startMidpoint.x / containerWidth) * pinchStartViewBox.value.width
+    const anchorSvgY = pinchStartViewBox.value.y + (startMidpoint.y / containerHeight) * pinchStartViewBox.value.height
 
-        // Adjust position to zoom towards the midpoint
-        viewBox.value.x = svgMidpoint.x - (newWidth / 2)
-        viewBox.value.y = svgMidpoint.y - (newHeight / 2)
-
-        zoom.value = 1200 / newWidth
-      }
-    }
-
-    // Update last midpoint for next incremental pan
-    lastPinchMidpoint.value = currentMidpoint
+    // Position viewBox so that anchor point is under the current midpoint
+    viewBox.value.x = anchorSvgX - (currentMidpoint.x / containerWidth) * newWidth
+    viewBox.value.y = anchorSvgY - (currentMidpoint.y / containerHeight) * newHeight
+    viewBox.value.width = newWidth
+    viewBox.value.height = newHeight
+    zoom.value = 1200 / newWidth
   }
 }
 
@@ -468,7 +459,6 @@ const onTouchEnd = (event: TouchEvent): void => {
     pinchStartDistance.value = null
     pinchStartMidpoint.value = null
     pinchStartViewBox.value = null
-    lastPinchMidpoint.value = null
   }
 }
 
