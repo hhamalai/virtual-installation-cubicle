@@ -97,7 +97,119 @@
     </div>
 
     <div class="section">
-      <h4>Wiring</h4>
+      <h4>Relays</h4>
+      <div class="tool-item" :class="{ selected: selectedComponent === 'relay-no-no' }" draggable="true" @dragstart="onDragStart($event, 'relay-no-no')" @click="onComponentTap('relay-no-no')">
+        <svg width="45" height="50" viewBox="0 0 60 90">
+          <!-- Coil -->
+          <rect x="22" y="36" width="16" height="18" rx="2" fill="none" stroke="#333" stroke-width="1.5"/>
+          <path d="M 26 42 Q 28 40, 30 42 Q 32 44, 34 42" fill="none" stroke="#333" stroke-width="1"/>
+          <path d="M 26 48 Q 28 46, 30 48 Q 32 50, 34 48" fill="none" stroke="#333" stroke-width="1"/>
+          <!-- Pole 1 (open) -->
+          <circle cx="12" cy="30" r="2.5" fill="#333"/>
+          <circle cx="12" cy="58" r="2.5" fill="#333"/>
+          <line x1="12" y1="58" x2="18" y2="34" stroke="#666" stroke-width="2"/>
+          <!-- Pole 2 (open) -->
+          <circle cx="48" cy="30" r="2.5" fill="#333"/>
+          <circle cx="48" cy="58" r="2.5" fill="#333"/>
+          <line x1="48" y1="58" x2="42" y2="34" stroke="#666" stroke-width="2"/>
+        </svg>
+        <span>Relay NO-NO</span>
+      </div>
+      <div class="tool-item" :class="{ selected: selectedComponent === 'relay-no-nc' }" draggable="true" @dragstart="onDragStart($event, 'relay-no-nc')" @click="onComponentTap('relay-no-nc')">
+        <svg width="45" height="50" viewBox="0 0 60 90">
+          <!-- Coil -->
+          <rect x="22" y="36" width="16" height="18" rx="2" fill="none" stroke="#333" stroke-width="1.5"/>
+          <path d="M 26 42 Q 28 40, 30 42 Q 32 44, 34 42" fill="none" stroke="#333" stroke-width="1"/>
+          <path d="M 26 48 Q 28 46, 30 48 Q 32 50, 34 48" fill="none" stroke="#333" stroke-width="1"/>
+          <!-- Pole 1 (NO, open) -->
+          <circle cx="12" cy="30" r="2.5" fill="#333"/>
+          <circle cx="12" cy="58" r="2.5" fill="#333"/>
+          <line x1="12" y1="58" x2="18" y2="34" stroke="#666" stroke-width="2"/>
+          <!-- Pole 2 (NC, closed) -->
+          <circle cx="48" cy="30" r="2.5" fill="#333"/>
+          <circle cx="48" cy="58" r="2.5" fill="#333"/>
+          <line x1="48" y1="58" x2="48" y2="30" stroke="#333" stroke-width="2"/>
+        </svg>
+        <span>Relay NO-NC</span>
+      </div>
+      <div class="tool-item" :class="{ selected: selectedComponent === 'relay-nc-nc' }" draggable="true" @dragstart="onDragStart($event, 'relay-nc-nc')" @click="onComponentTap('relay-nc-nc')">
+        <svg width="45" height="50" viewBox="0 0 60 90">
+          <!-- Coil -->
+          <rect x="22" y="36" width="16" height="18" rx="2" fill="none" stroke="#333" stroke-width="1.5"/>
+          <path d="M 26 42 Q 28 40, 30 42 Q 32 44, 34 42" fill="none" stroke="#333" stroke-width="1"/>
+          <path d="M 26 48 Q 28 46, 30 48 Q 32 50, 34 48" fill="none" stroke="#333" stroke-width="1"/>
+          <!-- Pole 1 (NC, closed) -->
+          <circle cx="12" cy="30" r="2.5" fill="#333"/>
+          <circle cx="12" cy="58" r="2.5" fill="#333"/>
+          <line x1="12" y1="58" x2="12" y2="30" stroke="#333" stroke-width="2"/>
+          <!-- Pole 2 (NC, closed) -->
+          <circle cx="48" cy="30" r="2.5" fill="#333"/>
+          <circle cx="48" cy="58" r="2.5" fill="#333"/>
+          <line x1="48" y1="58" x2="48" y2="30" stroke="#333" stroke-width="2"/>
+        </svg>
+        <span>Relay NC-NC</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <h4>Enclosures</h4>
+      <div class="tool-item" :class="{ selected: selectedComponent === 'junction-box' }" draggable="true" @dragstart="onDragStart($event, 'junction-box')" @click="onComponentTap('junction-box')">
+        <svg width="50" height="50" viewBox="0 0 100 100">
+          <!-- Box outline -->
+          <rect x="5" y="5" width="90" height="90" rx="3" fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+          <!-- Dividers -->
+          <line x1="50" y1="5" x2="50" y2="95" stroke="#ddd" stroke-width="1"/>
+          <line x1="5" y1="50" x2="95" y2="50" stroke="#ddd" stroke-width="1"/>
+          <!-- Top terminals -->
+          <circle cx="25" cy="5" r="3" fill="#fff" stroke="#333" stroke-width="1"/>
+          <circle cx="50" cy="5" r="3" fill="#fff" stroke="#333" stroke-width="1"/>
+          <circle cx="75" cy="5" r="3" fill="#fff" stroke="#333" stroke-width="1"/>
+          <!-- Bottom terminals -->
+          <circle cx="25" cy="95" r="3" fill="#fff" stroke="#333" stroke-width="1"/>
+          <circle cx="50" cy="95" r="3" fill="#fff" stroke="#333" stroke-width="1"/>
+          <circle cx="75" cy="95" r="3" fill="#fff" stroke="#333" stroke-width="1"/>
+          <!-- Left terminals -->
+          <circle cx="5" cy="25" r="3" fill="#fff" stroke="#333" stroke-width="1"/>
+          <circle cx="5" cy="50" r="3" fill="#fff" stroke="#333" stroke-width="1"/>
+          <circle cx="5" cy="75" r="3" fill="#fff" stroke="#333" stroke-width="1"/>
+          <!-- Right terminals -->
+          <circle cx="95" cy="25" r="3" fill="#fff" stroke="#333" stroke-width="1"/>
+          <circle cx="95" cy="50" r="3" fill="#fff" stroke="#333" stroke-width="1"/>
+          <circle cx="95" cy="75" r="3" fill="#fff" stroke="#333" stroke-width="1"/>
+        </svg>
+        <span>Junction Box AP9</span>
+      </div>
+      <div class="tool-item" :class="{ selected: selectedComponent === 'distribution-board' }" draggable="true" @dragstart="onDragStart($event, 'distribution-board')" @click="onComponentTap('distribution-board')">
+        <svg width="60" height="45" viewBox="0 0 120 90">
+          <!-- Board outline -->
+          <rect x="2" y="2" width="116" height="86" rx="3" fill="#e8e8e8" stroke="#333" stroke-width="1.5"/>
+          <!-- Power input section -->
+          <rect x="6" y="6" width="30" height="18" rx="2" fill="#f5f5f5" stroke="#666" stroke-width="0.5"/>
+          <circle cx="12" cy="20" r="2" fill="#d32f2f" stroke="#333" stroke-width="0.5"/>
+          <circle cx="21" cy="20" r="2" fill="#1976d2" stroke="#333" stroke-width="0.5"/>
+          <circle cx="30" cy="20" r="2" fill="#7cb342" stroke="#333" stroke-width="0.5"/>
+          <!-- DIN rails -->
+          <rect x="10" y="30" width="100" height="6" rx="1" fill="#b0b0b0" stroke="#888" stroke-width="0.5"/>
+          <rect x="10" y="48" width="100" height="6" rx="1" fill="#b0b0b0" stroke="#888" stroke-width="0.5"/>
+          <!-- Busbars -->
+          <rect x="10" y="66" width="100" height="4" rx="0.5" fill="#d32f2f"/>
+          <rect x="10" y="72" width="100" height="4" rx="0.5" fill="#1976d2"/>
+          <rect x="10" y="78" width="100" height="4" rx="0.5" fill="#7cb342"/>
+          <!-- Terminals on sides -->
+          <circle cx="2" cy="25" r="2" fill="#fff" stroke="#333" stroke-width="0.5"/>
+          <circle cx="2" cy="45" r="2" fill="#fff" stroke="#333" stroke-width="0.5"/>
+          <circle cx="2" cy="65" r="2" fill="#fff" stroke="#333" stroke-width="0.5"/>
+          <circle cx="118" cy="25" r="2" fill="#fff" stroke="#333" stroke-width="0.5"/>
+          <circle cx="118" cy="45" r="2" fill="#fff" stroke="#333" stroke-width="0.5"/>
+          <circle cx="118" cy="65" r="2" fill="#fff" stroke="#333" stroke-width="0.5"/>
+        </svg>
+        <span>Distribution Board</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <h4>Cables</h4>
+      <p class="section-hint">Click terminal to start, click to add points, click terminal to finish</p>
       <div
         class="tool-item cable-type"
         :class="{ selected: selectedCable === 'single' }"
@@ -110,45 +222,66 @@
         </svg>
         <span>Single Wire</span>
       </div>
+      <div
+        class="tool-item cable-type"
+        :class="{ selected: selectedCable === 'mmj3' }"
+        @click="selectCable('mmj3')"
+      >
+        <svg width="40" height="20" viewBox="0 0 40 20">
+          <line x1="5" y1="10" x2="35" y2="10" stroke="#9e9e9e" stroke-width="10" stroke-linecap="round"/>
+          <line x1="5" y1="10" x2="35" y2="10" stroke="#bdbdbd" stroke-width="6" stroke-linecap="round"/>
+          <line x1="5" y1="10" x2="35" y2="10" stroke="#7cb342" stroke-width="2" stroke-dasharray="4,3" stroke-linecap="round"/>
+        </svg>
+        <span>MMJ 3x1.5</span>
+      </div>
+      <div
+        class="tool-item cable-type"
+        :class="{ selected: selectedCable === 'mmj5' }"
+        @click="selectCable('mmj5')"
+      >
+        <svg width="40" height="20" viewBox="0 0 40 20">
+          <line x1="5" y1="10" x2="35" y2="10" stroke="#9e9e9e" stroke-width="13" stroke-linecap="round"/>
+          <line x1="5" y1="10" x2="35" y2="10" stroke="#bdbdbd" stroke-width="9" stroke-linecap="round"/>
+          <line x1="5" y1="10" x2="35" y2="10" stroke="#7cb342" stroke-width="2" stroke-dasharray="4,3" stroke-linecap="round"/>
+        </svg>
+        <span>MMJ 5x1.5</span>
+      </div>
+      <div
+        class="tool-item cable-type"
+        :class="{ selected: selectedCable === 'omm' }"
+        @click="selectCable('omm')"
+      >
+        <svg width="40" height="20" viewBox="0 0 40 20">
+          <line x1="5" y1="10" x2="35" y2="10" stroke="#616161" stroke-width="16" stroke-linecap="round"/>
+          <line x1="5" y1="10" x2="35" y2="10" stroke="#9e9e9e" stroke-width="12" stroke-linecap="round"/>
+        </svg>
+        <span>OMM 7-wire</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <h4>Wire Color</h4>
+      <p class="section-hint">Applies to single wires</p>
+      <div class="wire-colors">
+        <button
+          v-for="color in wireColorPresets"
+          :key="color"
+          type="button"
+          class="swatch"
+          :class="{ selected: selectedCable === 'single' && selectedWireColor.toLowerCase() === color.toLowerCase() }"
+          :style="{ background: color }"
+          :title="color"
+          @click="selectWireColor(color)"
+        />
+        <label class="swatch swatch-custom" title="Custom color">
+          <input type="color" :value="selectedWireColor" @input="onCustomColor" />
+        </label>
+      </div>
     </div>
 
     <div v-if="selectedCable" class="cable-info">
       <p>Click a terminal to start wiring</p>
       <button @click="cancelCable">Cancel</button>
-    </div>
-
-    <div class="section">
-      <h4>Cable Bundles</h4>
-      <div class="tool-item" :class="{ selected: selectedComponent === 'cable-mmj3' }" draggable="true" @dragstart="onDragStart($event, 'cable-mmj3')" @click="onComponentTap('cable-mmj3')">
-        <div class="cable-preview">
-          <div class="wire-color" style="background-color: #d32f2f"></div>
-          <div class="wire-color" style="background-color: #1976d2"></div>
-          <div class="wire-color" style="background-color: #7cb342"></div>
-        </div>
-        <span>MMJ 3×1.5</span>
-      </div>
-      <div class="tool-item" :class="{ selected: selectedComponent === 'cable-mmj5' }" draggable="true" @dragstart="onDragStart($event, 'cable-mmj5')" @click="onComponentTap('cable-mmj5')">
-        <div class="cable-preview">
-          <div class="wire-color" style="background-color: #d32f2f"></div>
-          <div class="wire-color" style="background-color: #212121"></div>
-          <div class="wire-color" style="background-color: #757575"></div>
-          <div class="wire-color" style="background-color: #1976d2"></div>
-          <div class="wire-color" style="background-color: #7cb342"></div>
-        </div>
-        <span>MMJ 5×1.5</span>
-      </div>
-      <div class="tool-item" :class="{ selected: selectedComponent === 'cable-omm' }" draggable="true" @dragstart="onDragStart($event, 'cable-omm')" @click="onComponentTap('cable-omm')">
-        <div class="cable-preview">
-          <div class="wire-color" style="background-color: #e91e63"></div>
-          <div class="wire-color" style="background-color: #9c27b0"></div>
-          <div class="wire-color" style="background-color: #673ab7"></div>
-          <div class="wire-color" style="background-color: #3f51b5"></div>
-          <div class="wire-color" style="background-color: #009688"></div>
-          <div class="wire-color" style="background-color: #ff9800"></div>
-          <div class="wire-color" style="background-color: #795548"></div>
-        </div>
-        <span>MMO 7-wire</span>
-      </div>
     </div>
   </div>
 </template>
@@ -161,10 +294,34 @@ const emit = defineEmits<{
   'select-cable': [type: string]
   'cancel-cable': []
   'select-component': [type: string]
+  'select-wire-color': [color: string]
 }>()
 
 const selectedCable = ref<string | null>(null)
 const selectedComponent = ref<string | null>(null)
+const selectedWireColor = ref<string>('#333333')
+
+const wireColorPresets = [
+  '#333333', // Black
+  '#8B4513', // Brown (L)
+  '#1976d2', // Blue (N)
+  '#757575', // Grey
+  '#d32f2f', // Red
+  '#7cb342', // Green/Yellow (PE)
+  '#ff9800', // Orange
+  '#ffffff'  // White
+]
+
+const selectWireColor = (color: string): void => {
+  selectedWireColor.value = color
+  selectedCable.value = 'single'
+  emit('select-cable', 'single')
+  emit('select-wire-color', color)
+}
+
+const onCustomColor = (event: Event): void => {
+  selectWireColor((event.target as HTMLInputElement).value)
+}
 
 const onDragStart = (event: DragEvent, type: string): void => {
   if (event.dataTransfer) {
@@ -238,6 +395,13 @@ h4 {
   color: #666;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.section-hint {
+  margin: 0 0 8px 0;
+  font-size: 10px;
+  color: #999;
+  font-style: italic;
 }
 
 .tool-item {
@@ -344,5 +508,46 @@ h4 {
 .tool-item.selected {
   border-color: #1976d2;
   background: #e3f2fd;
+}
+
+.wire-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.swatch:hover {
+  transform: scale(1.1);
+}
+
+.swatch.selected {
+  border: 2px solid #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.3);
+}
+
+.swatch-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: conic-gradient(red, orange, yellow, lime, aqua, blue, magenta, red);
+}
+
+.swatch-custom input {
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  cursor: pointer;
 }
 </style>

@@ -1,5 +1,8 @@
 <template>
   <g :transform="transform" class="power-input" @mouseenter="hovering = true" @mouseleave="hovering = false">
+    <!-- Invisible extended hover area to keep delete button accessible -->
+    <rect x="-20" y="-30" width="105" height="70" fill="transparent" stroke="none"/>
+
     <!-- Selection highlight -->
     <rect v-if="selected" x="-8" y="-18" width="86" height="46" rx="5" fill="none" stroke="#1976d2" stroke-width="2" stroke-dasharray="4,2"/>
 
@@ -15,6 +18,7 @@
        :transform="`translate(${terminal.localX}, ${terminal.localY})`"
        class="terminal"
        @click.stop="$emit('terminal-click', element.id, terminal.id)">
+      <circle class="terminal-hit" r="13" fill="transparent"/>
       <circle r="6" :fill="terminal.energized ? '#ff5722' : '#fff'" stroke="#333" stroke-width="2"/>
       <text y="18" text-anchor="middle" font-size="9" fill="#333"
             :transform="`rotate(${-rotation}, 0, 18)`">{{ terminal.name }}</text>
@@ -63,9 +67,11 @@ const transform = computed(() => {
 .terminal {
   cursor: pointer;
 }
-.terminal:hover circle {
-  stroke: #1976d2;
-  stroke-width: 3;
+.terminal-hit {
+  pointer-events: all;
+}
+.terminal:hover .terminal-hit {
+  fill: rgba(25, 118, 210, 0.18);
 }
 .delete-btn {
   cursor: pointer;

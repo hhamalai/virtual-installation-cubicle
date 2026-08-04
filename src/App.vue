@@ -5,6 +5,7 @@
       @select-cable="onSelectCable"
       @cancel-cable="onCancelCable"
       @select-component="onSelectComponent"
+      @select-wire-color="onSelectWireColor"
     />
     <div class="main">
       <header>
@@ -16,6 +17,7 @@
       <Canvas
         :selected-cable="selectedCable"
         :selected-component="selectedComponent"
+        :selected-wire-color="selectedWireColor"
         @wire-complete="onWireComplete"
         @component-placed="onComponentPlaced"
       />
@@ -51,6 +53,7 @@ interface ToolboxExposed {
 const toolboxRef = ref<InstanceType<typeof Toolbox> & ToolboxExposed | null>(null)
 const selectedCable = ref<string | null>(null)
 const selectedComponent = ref<string | null>(null)
+const selectedWireColor = ref<string>('#333333')
 
 const { clearAll: storeClearAll, cancelWiring } = useCircuitStore()
 
@@ -65,6 +68,10 @@ const onCancelCable = (): void => {
 
 const onSelectComponent = (componentType: string): void => {
   selectedComponent.value = componentType
+}
+
+const onSelectWireColor = (color: string): void => {
+  selectedWireColor.value = color
 }
 
 const onComponentPlaced = (): void => {

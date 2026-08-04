@@ -40,6 +40,7 @@
           :selected="selectedElementId === element.id || selectedElementIds.has(element.id)"
           @mousedown="onElementMouseDown($event, element)"
           @terminal-click="onTerminalClick"
+          @wire-terminal-click="onWireTerminalClick"
           @toggle="(switchIndex: number | undefined) => handleToggle(element.id, switchIndex)"
           @delete="removeElement(element.id)"
         />
@@ -56,8 +57,8 @@
         @update-wire-point="onUpdateWirePoint"
       />
 
-      <!-- Pending wire (while connecting) -->
-      <g v-if="pendingWire">
+      <!-- Pending wire (while connecting) - never intercepts terminal hovers -->
+      <g v-if="pendingWire" pointer-events="none">
         <path
           v-if="pendingWirePath"
           :d="pendingWirePath"
@@ -75,6 +76,27 @@
           fill="#ff9800"
           stroke="#fff"
           stroke-width="1"
+        />
+      </g>
+
+      <!-- Pending cable wire connection (from wire terminal cluster) -->
+      <g v-if="pendingCableWire" pointer-events="none">
+        <line
+          :x1="pendingCableWire.startPos.x"
+          :y1="pendingCableWire.startPos.y"
+          :x2="mousePos.x"
+          :y2="mousePos.y"
+          :stroke="pendingCableWire.color"
+          stroke-width="3"
+          stroke-dasharray="8,4"
+        />
+        <circle
+          :cx="pendingCableWire.startPos.x"
+          :cy="pendingCableWire.startPos.y"
+          r="6"
+          :fill="pendingCableWire.color"
+          stroke="#fff"
+          stroke-width="2"
         />
       </g>
 
@@ -98,6 +120,12 @@
           Click to add points, click terminal to finish
         </text>
       </g>
+      <g v-if="pendingCableWire" class="instructions">
+        <rect :x="viewBox.x + 10" :y="viewBox.y + 10" width="280" height="30" rx="4" fill="rgba(76,175,80,0.9)"/>
+        <text :x="viewBox.x + 150" :y="viewBox.y + 30" text-anchor="middle" fill="white" font-size="12">
+          Click a terminal to connect wire, Esc to cancel
+        </text>
+      </g>
     </svg>
     <div class="canvas-help">
       Scroll to zoom • Middle-click to pan • R to rotate • Del to delete • Drag to select multiple
@@ -106,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, type Component } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, provide, type Component } from 'vue'
 import { useCircuitStore } from '../stores/circuit'
 import { useConnections } from '../composables/useConnections'
 import { useDrag } from '../composables/useDrag'
@@ -119,12 +147,15 @@ import Switch5 from './elements/Switch5.vue'
 import Switch6 from './elements/Switch6.vue'
 import Switch66 from './elements/Switch66.vue'
 import Switch7 from './elements/Switch7.vue'
-import CableBundle from './elements/CableBundle.vue'
 import Cable from './wiring/Cable.vue'
+import Relay from './elements/Relay.vue'
+import JunctionBox from './elements/JunctionBox.vue'
+import DistributionBoard from './elements/DistributionBoard.vue'
 
 const props = defineProps<{
   selectedCable: string | null
   selectedComponent: string | null
+  selectedWireColor?: string
 }>()
 
 const emit = defineEmits<{
@@ -137,6 +168,12 @@ interface PendingWire {
   terminalId: string
   color: string
   controlPoints: Point[]
+  // Optional: if starting from a specific wire in a multi-wire cable
+  connectedCableId?: string
+  connectedWireIndex?: number
+  // Optional: local coordinates for expanded wire terminals
+  localX?: number
+  localY?: number
 }
 
 interface ViewBox {
@@ -173,6 +210,16 @@ const groupDragControlPoints = ref<Map<string, Point>>(new Map())
 const zoom = ref(1)
 const viewBox = ref<ViewBox>({ x: 0, y: 0, width: 1200, height: 800 })
 
+// Pending cable wire connection - when user clicks a wire terminal in a cluster
+interface PendingCableWire {
+  cableId: string
+  wireIndex: number
+  end: 'from' | 'to'
+  color: string
+  startPos: Point
+}
+const pendingCableWire = ref<PendingCableWire | null>(null)
+
 const {
   state,
   addElement,
@@ -185,14 +232,19 @@ const {
   cancelWiring,
   completeWire,
   removeCable,
-  updateWirePoint
+  updateWirePoint,
+  connectCableWire
 } = useCircuitStore()
+
+// Provide circuit state to child components (for JunctionBox to look up cable info and cables)
+// Provide the entire reactive state object so changes are properly tracked
+provide('circuitState', state)
 
 const elements = computed(() => state.elements)
 const cables = computed(() => state.cables)
 const wiringMode = computed(() => state.wiringMode)
 
-const { getWirePath, getTerminalPosition, getWireEndpoints } = useConnections(state)
+const { getWirePath, getTerminalPosition, getEndpointPosition, getWireEndpoints } = useConnections(state)
 
 // Clear pending wire when wiring mode is canceled externally
 watch(wiringMode, (newValue) => {
@@ -210,9 +262,11 @@ const componentMap: Record<string, Component> = {
   'switch6': Switch6,
   'switch66': Switch66,
   'switch7': Switch7,
-  'cable-mmj3': CableBundle,
-  'cable-mmj5': CableBundle,
-  'cable-omm': CableBundle
+  'relay-no-no': Relay,
+  'relay-no-nc': Relay,
+  'relay-nc-nc': Relay,
+  'junction-box': JunctionBox,
+  'distribution-board': DistributionBoard
 }
 
 const getComponentType = (type: string): Component => componentMap[type] || PowerInput
@@ -283,7 +337,7 @@ const onMouseDown = (event: MouseEvent): void => {
   // Left mouse button on empty canvas - start selection rectangle
   if (event.button === 0 && !wiringMode.value) {
     const target = event.target as HTMLElement
-    const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .cable-bundle')
+    const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .junction-box, .distribution-board')
 
     if (!clickedOnElement && !target.closest('.terminal')) {
       const pos = getSvgPoint(event.clientX, event.clientY)
@@ -441,7 +495,7 @@ const onTouchEnd = (event: TouchEvent): void => {
     const target = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement
 
     // Check if tapped on an element
-    const clickedOnElement = target?.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .cable-bundle')
+    const clickedOnElement = target?.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .junction-box, .distribution-board')
 
     // Handle tap-to-place component (for touch devices)
     if (props.selectedComponent && !clickedOnElement && !target?.closest('.terminal')) {
@@ -523,10 +577,34 @@ const onDrop = (event: DragEvent): void => {
 const pendingWirePath = computed(() => {
   if (!pendingWire.value) return ''
 
-  const fromPos = getTerminalPosition(
-    pendingWire.value.elementId,
-    pendingWire.value.terminalId
-  )
+  let fromPos: Point | null = null
+
+  // If we have local coordinates, calculate position directly from them
+  if (pendingWire.value.localX !== undefined && pendingWire.value.localY !== undefined) {
+    const element = elements.value.find(e => e.id === pendingWire.value!.elementId)
+    if (element) {
+      const rotation = element.rotation || 0
+      const rad = (rotation * Math.PI) / 180
+      const centerX = 75 // JUNCTION_BOX_SIZE / 2
+      const centerY = 75
+      const relX = pendingWire.value.localX - centerX
+      const relY = pendingWire.value.localY - centerY
+      const rotatedX = relX * Math.cos(rad) - relY * Math.sin(rad)
+      const rotatedY = relX * Math.sin(rad) + relY * Math.cos(rad)
+      fromPos = {
+        x: element.x + centerX + rotatedX,
+        y: element.y + centerY + rotatedY
+      }
+    }
+  } else {
+    // Fall back to getEndpointPosition for wire-specific connections
+    fromPos = getEndpointPosition({
+      elementId: pendingWire.value.elementId,
+      terminalId: pendingWire.value.terminalId,
+      connectedCableId: pendingWire.value.connectedCableId,
+      connectedWireIndex: pendingWire.value.connectedWireIndex
+    })
+  }
   if (!fromPos) return ''
 
   const points = [fromPos, ...pendingWire.value.controlPoints, mousePos.value]
@@ -559,8 +637,113 @@ const pendingWirePath = computed(() => {
   return path
 })
 
+// DIN rail snapping configuration (modular relay: 18x90)
+const RELAY_WIDTH = 30
+const RELAY_HEIGHT = 90
+const DIN_RAIL_SNAP_DISTANCE = 30 // How close to snap to DIN rail
+const DIN_RAIL_HEIGHT = 12
+
+// Check if element is a relay type
+const isRelayType = (type: string): boolean => {
+  return type.startsWith('relay-')
+}
+
+// Find the closest DIN rail in any distribution board to a given position
+const findClosestDinRail = (x: number, y: number, elementWidth: number): { boardId: string; railId: string; railY: number; boardX: number; boardY: number } | null => {
+  let closest: { boardId: string; railId: string; railY: number; boardX: number; boardY: number; distance: number } | null = null
+
+  for (const el of elements.value) {
+    if (el.type !== 'distribution-board' || !el.state.dinRails) continue
+
+    const boardX = el.x
+    const boardY = el.y
+    const boardWidth = 400
+
+    // Check if x is within the board (with some margin for the relay width)
+    const relayRight = x + elementWidth
+    const boardRight = boardX + boardWidth - 20 // Leave margin on right
+
+    // Check each DIN rail
+    for (const rail of el.state.dinRails) {
+      const railWorldY = boardY + rail.y
+      const railLeft = boardX + 10
+      const railRight = boardRight
+
+      // Check if relay's center is above the rail and within horizontal bounds
+      const relayBottomY = y + RELAY_HEIGHT
+      const distanceToRail = Math.abs(relayBottomY - railWorldY - DIN_RAIL_HEIGHT)
+
+      // Check horizontal overlap
+      if (x >= railLeft - 20 && relayRight <= railRight + 20) {
+        if (!closest || distanceToRail < closest.distance) {
+          closest = {
+            boardId: el.id,
+            railId: rail.id,
+            railY: railWorldY,
+            boardX: boardX,
+            boardY: boardY,
+            distance: distanceToRail
+          }
+        }
+      }
+    }
+  }
+
+  if (closest && closest.distance < DIN_RAIL_SNAP_DISTANCE) {
+    return {
+      boardId: closest.boardId,
+      railId: closest.railId,
+      railY: closest.railY,
+      boardX: closest.boardX,
+      boardY: closest.boardY
+    }
+  }
+
+  return null
+}
+
 // Drag handling for elements
 const { startDrag } = useDrag(getSvgPoint, (element: Element, newX: number, newY: number, _isDone: boolean) => {
+  // DIN rail snapping for relays
+  if (isRelayType(element.type)) {
+    const closestRail = findClosestDinRail(newX, newY, RELAY_WIDTH)
+
+    if (closestRail) {
+      // Snap to DIN rail - position relay so its bottom sits on the rail
+      const snappedY = closestRail.railY - RELAY_HEIGHT + DIN_RAIL_HEIGHT + 5
+
+      // Constrain X within the distribution board bounds
+      const minX = closestRail.boardX + 15
+      const maxX = closestRail.boardX + 400 - RELAY_WIDTH - 15
+      const snappedX = Math.max(minX, Math.min(maxX, newX))
+
+      updateElement(element.id, {
+        x: snappedX,
+        y: snappedY,
+        state: {
+          ...element.state,
+          mountedOn: {
+            boardId: closestRail.boardId,
+            railId: closestRail.railId,
+            position: snappedX - closestRail.boardX
+          }
+        }
+      })
+      return
+    } else if (element.state.mountedOn) {
+      // Was mounted but now not near any rail - unmount
+      updateElement(element.id, {
+        x: newX,
+        y: newY,
+        state: {
+          ...element.state,
+          mountedOn: undefined
+        }
+      })
+      return
+    }
+  }
+
   updateElement(element.id, { x: newX, y: newY })
 })
 
@@ -616,6 +799,19 @@ const onElementMouseDown = (event: MouseEvent, element: Element): void => {
 }
 
 const onTerminalClick = (elementId: string, terminalId: string): void => {
+  // Handle pending cable wire connection first
+  if (pendingCableWire.value) {
+    connectCableWire(
+      pendingCableWire.value.cableId,
+      pendingCableWire.value.wireIndex,
+      pendingCableWire.value.end,
+      elementId,
+      terminalId
+    )
+    pendingCableWire.value = null
+    return
+  }
+
   // Use selected cable or default to 'single' wire
   const cableType = props.selectedCable || 'single'
 
@@ -626,8 +822,14 @@ const onTerminalClick = (elementId: string, terminalId: string): void => {
     'omm': '#e91e63'
   }
 
+  // Single wires use the picked color; multi-wire cables keep their fixed colors
+  const isSingle = cableType === 'single'
+  const wireColor = isSingle
+    ? (props.selectedWireColor || '#333')
+    : (cableColors[cableType] || '#333')
+
   if (!wiringMode.value) {
-    startWiring(cableType, elementId, terminalId)
+    startWiring(cableType, elementId, terminalId, undefined, undefined, isSingle ? wireColor : undefined)
 
     // Get terminal position for initial mouse position
     const termPos = getTerminalPosition(elementId, terminalId)
@@ -635,7 +837,7 @@ const onTerminalClick = (elementId: string, terminalId: string): void => {
     pendingWire.value = {
       elementId,
       terminalId,
-      color: cableColors[cableType] || '#333',
+      color: wireColor,
       controlPoints: []
     }
 
@@ -652,6 +854,92 @@ const onTerminalClick = (elementId: string, terminalId: string): void => {
 
 const handleToggle = (elementId: string, switchIndex?: number): void => {
   toggleSwitch(elementId, switchIndex)
+}
+
+// Handle click on a wire terminal in a cable cluster
+const onWireTerminalClick = (data: { cableId: string; wireIndex: number; end: 'from' | 'to'; elementId: string; terminalId: string; localX: number; localY: number }): void => {
+  // If there's a pending single wire, complete it connecting to the specific wire in the cable
+  if (wiringMode.value) {
+    completeWire(data.elementId, data.terminalId, data.cableId, data.wireIndex)
+    pendingWire.value = null
+    emit('wire-complete')
+    return
+  }
+
+  // If there's a pending cable wire, connect it to this terminal
+  if (pendingCableWire.value) {
+    connectCableWire(
+      pendingCableWire.value.cableId,
+      pendingCableWire.value.wireIndex,
+      pendingCableWire.value.end,
+      data.elementId,
+      data.terminalId
+    )
+    pendingCableWire.value = null
+    return
+  }
+
+  const cable = cables.value.find(c => c.id === data.cableId)
+  if (!cable) return
+
+  // Check if the cable is connected to this junction box (first wire defines the cable path)
+  const firstWire = cable.wires.find(w => w.from && w.to)
+  const cableConnectedHere = firstWire && (
+    (firstWire.from?.elementId === data.elementId && firstWire.from?.terminalId === data.terminalId) ||
+    (firstWire.to?.elementId === data.elementId && firstWire.to?.terminalId === data.terminalId)
+  )
+
+  if (cableConnectedHere) {
+    // Extended terminal - start a new single wire connecting to this specific wire in the cable
+    const cableType = props.selectedCable || 'single'
+    const cableColors: Record<string, string> = {
+      'single': '#333',
+      'mmj3': '#d32f2f',
+      'mmj5': '#d32f2f',
+      'omm': '#e91e63'
+    }
+
+    const isSingle = cableType === 'single'
+    const wireColor = isSingle
+      ? (props.selectedWireColor || '#333')
+      : (cableColors[cableType] || '#333')
+
+    // Pass the cable/wire info so the new wire connects to this specific wire
+    startWiring(cableType, data.elementId, data.terminalId, data.cableId, data.wireIndex, isSingle ? wireColor : undefined)
+
+    // Use the local coordinates passed from the JunctionBox
+    pendingWire.value = {
+      elementId: data.elementId,
+      terminalId: data.terminalId,
+      color: wireColor,
+      controlPoints: [],
+      connectedCableId: data.cableId,
+      connectedWireIndex: data.wireIndex,
+      localX: data.localX,
+      localY: data.localY
+    }
+
+    // Calculate world position from local coordinates
+    const element = elements.value.find(e => e.id === data.elementId)
+    if (element) {
+      const rotation = element.rotation || 0
+      const rad = (rotation * Math.PI) / 180
+      const centerX = 75 // JUNCTION_BOX_SIZE / 2
+      const centerY = 75
+      const relX = data.localX - centerX
+      const relY = data.localY - centerY
+      const rotatedX = relX * Math.cos(rad) - relY * Math.sin(rad)
+      const rotatedY = relX * Math.sin(rad) + relY * Math.cos(rad)
+      mousePos.value = {
+        x: element.x + centerX + rotatedX,
+        y: element.y + centerY + rotatedY
+      }
+    }
+    return
+  }
+
+  // Cable is not connected to this junction box terminal yet - shouldn't happen for extended terminals
+  // but handle it gracefully by doing nothing
 }
 
 interface WirePointUpdate {
@@ -676,7 +964,7 @@ const onCanvasClick = (event: MouseEvent): void => {
   const target = event.target as HTMLElement
 
   // Check if clicked on an element (not empty canvas)
-  const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .cable-bundle')
+  const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .junction-box, .distribution-board')
 
   // Handle tap-to-place component (for touch devices)
   if (props.selectedComponent && !clickedOnElement && !target.closest('.terminal')) {
@@ -718,6 +1006,10 @@ const onKeyDown = (event: KeyboardEvent): void => {
     }
   }
   if (event.key === 'Escape') {
+    if (pendingCableWire.value) {
+      pendingCableWire.value = null
+      return
+    }
     if (wiringMode.value) {
       cancelWiring()
       pendingWire.value = null

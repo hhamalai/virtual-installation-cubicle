@@ -1,4 +1,9 @@
-import type { CircuitState, Element, Wire, Point } from '../types'
+import type { CircuitState, Element, Wire, Point, WireEndpoint } from '../types'
+
+// Junction box constants (must match JunctionBox.vue)
+const JUNCTION_BOX_SIZE = 150
+const WIRE_TERMINAL_SPACING = 10
+const WIRE_TERMINAL_INSET = 12
 
 export function useConnections(circuitState: CircuitState) {
   const getTerminalPosition = (elementId: string, terminalId: string): Point | null => {
@@ -29,6 +34,69 @@ export function useConnections(circuitState: CircuitState) {
     }
   }
 
+  // Get position for a wire endpoint, handling wire-specific connections
+  const getEndpointPosition = (endpoint: WireEndpoint): Point | null => {
+    const element = circuitState.elements.find(e => e.id === endpoint.elementId)
+    if (!element) return null
+
+    const terminal = element.terminals.find(t => t.id === endpoint.terminalId)
+    if (!terminal) return null
+
+    // Check if this connects to a specific wire in a cable
+    if (endpoint.connectedCableId !== undefined && endpoint.connectedWireIndex !== undefined) {
+      const cable = circuitState.cables.find(c => c.id === endpoint.connectedCableId)
+      if (cable) {
+        // Calculate expanded wire terminal position
+        const wireCount = cable.wires.length
+        const wireIndex = endpoint.connectedWireIndex
+        const totalSpread = (wireCount - 1) * WIRE_TERMINAL_SPACING
+        const startOffset = -totalSpread / 2
+
+        // Determine which edge the terminal is on
+        const isTopEdge = terminal.localY === 0
+        const isBottomEdge = terminal.localY === JUNCTION_BOX_SIZE
+        const isLeftEdge = terminal.localX === 0
+        const isRightEdge = terminal.localX === JUNCTION_BOX_SIZE
+
+        let localX = terminal.localX
+        let localY = terminal.localY
+
+        if (isTopEdge) {
+          localX += startOffset + wireIndex * WIRE_TERMINAL_SPACING
+          localY = WIRE_TERMINAL_INSET
+        } else if (isBottomEdge) {
+          localX += startOffset + wireIndex * WIRE_TERMINAL_SPACING
+          localY = JUNCTION_BOX_SIZE - WIRE_TERMINAL_INSET
+        } else if (isLeftEdge) {
+          localX = WIRE_TERMINAL_INSET
+          localY += startOffset + wireIndex * WIRE_TERMINAL_SPACING
+        } else if (isRightEdge) {
+          localX = JUNCTION_BOX_SIZE - WIRE_TERMINAL_INSET
+          localY += startOffset + wireIndex * WIRE_TERMINAL_SPACING
+        }
+
+        // Apply rotation
+        const rotation = element.rotation || 0
+        const rad = (rotation * Math.PI) / 180
+        const centerX = JUNCTION_BOX_SIZE / 2
+        const centerY = JUNCTION_BOX_SIZE / 2
+
+        const relX = localX - centerX
+        const relY = localY - centerY
+        const rotatedX = relX * Math.cos(rad) - relY * Math.sin(rad)
+        const rotatedY = relX * Math.sin(rad) + relY * Math.cos(rad)
+
+        return {
+          x: element.x + centerX + rotatedX,
+          y: element.y + centerY + rotatedY
+        }
+      }
+    }
+
+    // Default: use regular terminal position
+    return getTerminalPosition(endpoint.elementId, endpoint.terminalId)
+  }
+
   const getElementWidth = (element: Element): number => {
     if (!element.terminals || element.terminals.length === 0) return 60
     const maxX = Math.max(...element.terminals.map(t => t.localX))
@@ -44,8 +112,9 @@ export function useConnections(circuitState: CircuitState) {
   const getWirePath = (wire: Wire): string | null => {
     if (!wire.from || !wire.to) return null
 
-    const fromPos = getTerminalPosition(wire.from.elementId, wire.from.terminalId)
-    const toPos = getTerminalPosition(wire.to.elementId, wire.to.terminalId)
+    // Use getEndpointPosition to handle wire-specific connections
+    const fromPos = getEndpointPosition(wire.from)
+    const toPos = getEndpointPosition(wire.to)
 
     if (!fromPos || !toPos) return null
 
@@ -90,14 +159,16 @@ export function useConnections(circuitState: CircuitState) {
   const getWireEndpoints = (wire: Wire): { from: Point | null; to: Point | null } | null => {
     if (!wire.from || !wire.to) return null
 
-    const fromPos = getTerminalPosition(wire.from.elementId, wire.from.terminalId)
-    const toPos = getTerminalPosition(wire.to.elementId, wire.to.terminalId)
+    // Use getEndpointPosition to handle wire-specific connections
+    const fromPos = getEndpointPosition(wire.from)
+    const toPos = getEndpointPosition(wire.to)
 
     return { from: fromPos, to: toPos }
   }
 
   return {
     getTerminalPosition,
+    getEndpointPosition,
     getWirePath,
     getWireEndpoints
   }

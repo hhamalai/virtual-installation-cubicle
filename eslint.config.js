@@ -22,7 +22,9 @@ export default [
         // DOM types
         HTMLElement: 'readonly',
         HTMLDivElement: 'readonly',
+        HTMLInputElement: 'readonly',
         SVGSVGElement: 'readonly',
+        Event: 'readonly',
         MouseEvent: 'readonly',
         TouchEvent: 'readonly',
         WheelEvent: 'readonly',
