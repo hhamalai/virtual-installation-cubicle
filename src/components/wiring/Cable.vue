@@ -6,7 +6,7 @@
       <path
         :d="wirePath"
         :stroke="cableOuterColor"
-        :stroke-width="cableStrokeWidth + 4"
+        :stroke-width="cableStrokeWidth + 3"
         fill="none"
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -121,11 +121,11 @@ const endpoints = computed(() => {
 const cableStrokeWidth = computed((): number => {
   const wireCount = props.cable.wires.length
   switch (wireCount) {
-    case 1: return 3   // Single wire
-    case 3: return 6   // MMJ3
-    case 5: return 9   // MMJ5
-    case 7: return 12  // OMM
-    default: return 3 + wireCount
+    case 1: return 2   // Single wire
+    case 3: return 4   // MMJ3
+    case 5: return 6   // MMJ5
+    case 7: return 8   // OMM
+    default: return 2 + wireCount
   }
 })
 

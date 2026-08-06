@@ -57,13 +57,27 @@
         @update-wire-point="onUpdateWirePoint"
       />
 
+      <!-- Energized terminal indicators (drawn above wires so they stay visible) -->
+      <g class="energized-overlay" pointer-events="none">
+        <circle
+          v-for="dot in energizedDots"
+          :key="dot.id"
+          :cx="dot.x"
+          :cy="dot.y"
+          r="3.5"
+          fill="#ff5722"
+          stroke="#fff"
+          stroke-width="1.5"
+        />
+      </g>
+
       <!-- Pending wire (while connecting) - never intercepts terminal hovers -->
       <g v-if="pendingWire" pointer-events="none">
         <path
           v-if="pendingWirePath"
           :d="pendingWirePath"
           :stroke="pendingWire.color"
-          stroke-width="3"
+          stroke-width="2"
           fill="none"
         />
         <!-- Control points -->
@@ -245,6 +259,20 @@ const cables = computed(() => state.cables)
 const wiringMode = computed(() => state.wiringMode)
 
 const { getWirePath, getTerminalPosition, getEndpointPosition, getWireEndpoints } = useConnections(state)
+
+// Energized terminal positions, rendered as an overlay above wires so the
+// energized indicator isn't hidden by a wire ending on the terminal.
+const energizedDots = computed(() => {
+  const dots: { id: string; x: number; y: number }[] = []
+  for (const el of state.elements) {
+    for (const t of el.terminals) {
+      if (!t.energized) continue
+      const pos = getTerminalPosition(el.id, t.id)
+      if (pos) dots.push({ id: `${el.id}-${t.id}`, x: pos.x, y: pos.y })
+    }
+  }
+  return dots
+})
 
 // Clear pending wire when wiring mode is canceled externally
 watch(wiringMode, (newValue) => {
