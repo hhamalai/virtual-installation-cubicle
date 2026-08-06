@@ -1,5 +1,22 @@
 <template>
   <div class="app">
+    <div v-if="showDisclaimer" class="disclaimer-overlay" @click.self="dismissDisclaimer">
+      <div class="disclaimer-dialog" role="dialog" aria-modal="true" aria-labelledby="disclaimer-title">
+        <h2 id="disclaimer-title">⚠️ For learning purposes only</h2>
+        <p>
+          This application is a virtual sandbox intended for learning and
+          experimentation. It must not be relied upon for actual live
+          electrical installations.
+        </p>
+        <p>
+          The author takes no responsibility for any use of this tool as
+          instruction for installing real electrical systems. Always consult a
+          qualified electrician and follow local regulations.
+        </p>
+        <button class="disclaimer-btn" @click="dismissDisclaimer">I understand</button>
+      </div>
+    </div>
+
     <Toolbox
       ref="toolboxRef"
       @select-cable="onSelectCable"
@@ -54,6 +71,11 @@ const toolboxRef = ref<InstanceType<typeof Toolbox> & ToolboxExposed | null>(nul
 const selectedCable = ref<string | null>(null)
 const selectedComponent = ref<string | null>(null)
 const selectedWireColor = ref<string>('#333333')
+const showDisclaimer = ref<boolean>(true)
+
+const dismissDisclaimer = (): void => {
+  showDisclaimer.value = false
+}
 
 const { clearAll: storeClearAll, cancelWiring } = useCircuitStore()
 
@@ -176,5 +198,54 @@ footer p {
 .github-link:hover {
   opacity: 1;
   color: #333;
+}
+
+.disclaimer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.disclaimer-dialog {
+  background: #fff;
+  border-radius: 8px;
+  max-width: 460px;
+  width: 100%;
+  padding: 24px 28px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  border-top: 4px solid #f0ad4e;
+}
+
+.disclaimer-dialog h2 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.disclaimer-dialog p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #555;
+}
+
+.disclaimer-btn {
+  margin-top: 8px;
+  padding: 8px 18px;
+  border: none;
+  background: #1976d2;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.disclaimer-btn:hover {
+  background: #1565c0;
 }
 </style>
