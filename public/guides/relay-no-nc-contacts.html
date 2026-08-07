@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relay NO vs NC Contacts Explained (with A1/N Coil Wiring)</title>
+  <meta name="description" content="Understand normally-open (NO) and normally-closed (NC) relay contacts, how the A1/N coil switches them, and NO-NO, NO-NC and NC-NC two-pole relays — then try it in a free simulator.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1976d2">
+  <link rel="canonical" href="https://virtual-installation-cubicle.netlify.app/guides/relay-no-nc-contacts.html">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Relay NO vs NC Contacts Explained (with A1/N Coil Wiring)">
+  <meta property="og:description" content="Normally-open vs normally-closed relay contacts, the A1/N coil, and NO-NO / NO-NC / NC-NC two-pole relays — with a free browser simulator.">
+  <meta property="og:url" content="https://virtual-installation-cubicle.netlify.app/guides/relay-no-nc-contacts.html">
+  <meta property="og:image" content="https://virtual-installation-cubicle.netlify.app/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Relay NO vs NC contacts explained",
+    "description": "Understand normally-open and normally-closed relay contacts, how the A1/N coil switches them, and the difference between NO-NO, NO-NC and NC-NC two-pole relays.",
+    "author": { "@type": "Person", "name": "hhamalai" },
+    "mainEntityOfPage": "https://virtual-installation-cubicle.netlify.app/guides/relay-no-nc-contacts.html",
+    "image": "https://virtual-installation-cubicle.netlify.app/og-image.png"
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://virtual-installation-cubicle.netlify.app/" },
+      { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://virtual-installation-cubicle.netlify.app/guides/" },
+      { "@type": "ListItem", "position": 3, "name": "Relay NO vs NC contacts", "item": "https://virtual-installation-cubicle.netlify.app/guides/relay-no-nc-contacts.html" }
+    ]
+  }
+  </script>
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#333;line-height:1.65;background:#fff}
+    .wrap{max-width:760px;margin:0 auto;padding:32px 24px 80px}
+    .crumbs{font-size:13px;color:#8595a4;margin-bottom:20px}
+    .crumbs a{color:#1976d2;text-decoration:none}
+    h1{font-size:28px;margin-bottom:14px;color:#1a2733}
+    h2{font-size:20px;margin:30px 0 10px;color:#1a2733}
+    p,li{color:#4a5763;font-size:16px;margin-bottom:10px}
+    ol,ul{padding-left:24px;margin:10px 0}
+    .cta{display:inline-block;margin:20px 0;padding:11px 22px;background:#1976d2;color:#fff;border-radius:6px;text-decoration:none;font-size:15px}
+    .terminals{background:#f6f8fa;border:1px solid #e3e8ee;border-radius:6px;padding:14px 18px;margin:14px 0;font-size:15px}
+    table{border-collapse:collapse;margin:14px 0;font-size:15px;width:100%}
+    th,td{border:1px solid #e3e8ee;padding:8px 12px;text-align:left}
+    th{background:#f6f8fa}
+    .disclaimer{margin-top:30px;padding:14px 16px;border-left:4px solid #f0ad4e;background:#fff8ec;font-size:14px}
+    .related{margin-top:34px;border-top:1px solid #eee;padding-top:18px}
+    .related a{color:#1976d2}
+    footer{margin-top:30px;font-size:13px;color:#8595a4}
+    code{background:#eef2f6;padding:1px 6px;border-radius:4px;font-size:14px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="crumbs"><a href="/">Virtual Installation Cubicle</a> › <a href="/guides/index.html">Guides</a> › Relay NO vs NC contacts</nav>
+
+    <h1>Relay NO vs NC contacts explained</h1>
+    <p>
+      A relay is an electrically operated switch. A <strong>coil</strong> creates a magnetic
+      field that moves one or more <strong>contacts</strong>. The two contact types are
+      <strong>normally-open (NO)</strong> and <strong>normally-closed (NC)</strong> — "normal"
+      meaning the resting state with the coil <em>de-energized</em>.
+    </p>
+
+    <table>
+      <tr><th>Contact</th><th>Coil off (rest)</th><th>Coil on (energized)</th></tr>
+      <tr><td>Normally open (NO)</td><td>Open — no current</td><td>Closed — conducts</td></tr>
+      <tr><td>Normally closed (NC)</td><td>Closed — conducts</td><td>Open — no current</td></tr>
+    </table>
+
+    <a class="cta" href="/">Open the simulator →</a>
+
+    <h2>The coil: A1 and N</h2>
+    <div class="terminals">
+      In the simulator each relay has a control coil wired across <code>A1</code> and
+      <code>N</code>. Energize <code>A1</code> and connect <code>N</code> back to neutral and the
+      coil pulls in, changing every contact at once. A small indicator lights when the coil is
+      energized.
+    </div>
+
+    <h2>Two-pole relays: NO-NO, NO-NC and NC-NC</h2>
+    <p>
+      The relays here are two-pole: contact terminals <code>1</code>–<code>2</code> form the
+      first pole and <code>3</code>–<code>4</code> form the second. The three variants set what
+      each pole does when the coil energizes:
+    </p>
+    <ul>
+      <li><strong>NO-NO</strong> — both poles close when energized.</li>
+      <li><strong>NO-NC</strong> — pole 1 closes, pole 2 opens (useful for switching one load on while switching another off).</li>
+      <li><strong>NC-NC</strong> — both poles open when energized.</li>
+    </ul>
+
+    <h2>Try it: switch a lamp with a relay</h2>
+    <ol>
+      <li>Wire line <code>L</code> to relay terminal <code>1</code>, and terminal <code>2</code> to the lamp's <code>L</code>. Lamp <code>N</code> goes back to the source.</li>
+      <li>Wire the coil: <code>L</code> to <code>A1</code>, and the relay's <code>N</code> to the source neutral.</li>
+      <li>On an NO relay the lamp is off until the coil energizes, then pole 1 closes and the lamp lights. On an NC relay it is the opposite.</li>
+    </ol>
+
+    <a class="cta" href="/">Try it in the simulator →</a>
+
+    <div class="related">
+      <strong>Related guides</strong>
+      <ul>
+        <li><a href="/guides/two-way-switch-wiring.html">How to wire a two-way switch (two locations)</a></li>
+        <li><a href="/guides/intermediate-cross-switch-wiring.html">Control a light from three or more places</a></li>
+      </ul>
+    </div>
+
+    <div class="disclaimer">
+      <strong>For learning purposes only.</strong> This guide and simulator must not be relied
+      on for actual live installations. Always consult a qualified electrician and follow local
+      regulations.
+    </div>
+
+    <footer>© Virtual Installation Cubicle · <a href="/" style="color:#8595a4">Home</a></footer>
+  </div>
+</body>
+</html>

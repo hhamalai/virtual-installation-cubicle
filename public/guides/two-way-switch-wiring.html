@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Wire a Two-Way Switch (Control a Light from Two Places)</title>
+  <meta name="description" content="Step-by-step guide to wiring a two-way (changeover) switch so one lamp is controlled from two locations, with common and traveller terminals explained — try it in a free simulator.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1976d2">
+  <link rel="canonical" href="https://virtual-installation-cubicle.netlify.app/guides/two-way-switch-wiring.html">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="How to Wire a Two-Way Switch (Control a Light from Two Places)">
+  <meta property="og:description" content="Common and traveller terminals explained, step by step — then try it in a free browser simulator.">
+  <meta property="og:url" content="https://virtual-installation-cubicle.netlify.app/guides/two-way-switch-wiring.html">
+  <meta property="og:image" content="https://virtual-installation-cubicle.netlify.app/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to wire a two-way switch to control a light from two places",
+    "description": "Wire two changeover (two-way) switches so a single lamp can be turned on or off from either of two locations.",
+    "totalTime": "PT5M",
+    "tool": [
+      { "@type": "HowToTool", "name": "Two changeover (two-way) switches" },
+      { "@type": "HowToTool", "name": "One lamp" },
+      { "@type": "HowToTool", "name": "A line/neutral power source" }
+    ],
+    "step": [
+      { "@type": "HowToStep", "name": "Feed the line", "text": "Connect the line (L) from the power source to the common (COM) terminal of the first switch." },
+      { "@type": "HowToStep", "name": "Join the travellers", "text": "Connect the two traveller terminals (L1 and L2) of the first switch to the matching L1 and L2 travellers of the second switch." },
+      { "@type": "HowToStep", "name": "Feed the lamp", "text": "Connect the common (COM) of the second switch to the line terminal of the lamp." },
+      { "@type": "HowToStep", "name": "Complete the circuit", "text": "Connect the neutral (N) of the lamp back to the neutral of the power source. The lamp now toggles from either switch." }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://virtual-installation-cubicle.netlify.app/" },
+      { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://virtual-installation-cubicle.netlify.app/guides/" },
+      { "@type": "ListItem", "position": 3, "name": "Two-way switch wiring", "item": "https://virtual-installation-cubicle.netlify.app/guides/two-way-switch-wiring.html" }
+    ]
+  }
+  </script>
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#333;line-height:1.65;background:#fff}
+    .wrap{max-width:760px;margin:0 auto;padding:32px 24px 80px}
+    .crumbs{font-size:13px;color:#8595a4;margin-bottom:20px}
+    .crumbs a{color:#1976d2;text-decoration:none}
+    h1{font-size:28px;margin-bottom:14px;color:#1a2733}
+    h2{font-size:20px;margin:30px 0 10px;color:#1a2733}
+    p,li{color:#4a5763;font-size:16px;margin-bottom:10px}
+    ol,ul{padding-left:24px;margin:10px 0}
+    .cta{display:inline-block;margin:20px 0;padding:11px 22px;background:#1976d2;color:#fff;border-radius:6px;text-decoration:none;font-size:15px}
+    .terminals{background:#f6f8fa;border:1px solid #e3e8ee;border-radius:6px;padding:14px 18px;margin:14px 0;font-size:15px}
+    .disclaimer{margin-top:30px;padding:14px 16px;border-left:4px solid #f0ad4e;background:#fff8ec;font-size:14px}
+    .related{margin-top:34px;border-top:1px solid #eee;padding-top:18px}
+    .related a{color:#1976d2}
+    footer{margin-top:30px;font-size:13px;color:#8595a4}
+    code{background:#eef2f6;padding:1px 6px;border-radius:4px;font-size:14px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="crumbs"><a href="/">Virtual Installation Cubicle</a> › <a href="/guides/index.html">Guides</a> › Two-way switch wiring</nav>
+
+    <h1>How to wire a two-way switch (control a light from two places)</h1>
+    <p>
+      A two-way switch — also called a <strong>changeover</strong> switch — lets you turn one
+      lamp on or off from two separate locations, such as the top and bottom of a staircase.
+      It has three terminals: a <strong>common (COM)</strong> and two
+      <strong>travellers (L1 and L2)</strong>. This guide walks through the wiring and lets you
+      build it in a free browser simulator.
+    </p>
+
+    <a class="cta" href="/">Open the simulator →</a>
+
+    <h2>What you need</h2>
+    <ul>
+      <li>Two changeover switches (the <strong>Type 6</strong> switch in the simulator)</li>
+      <li>One lamp</li>
+      <li>A line/neutral power source</li>
+    </ul>
+
+    <h2>The terminals</h2>
+    <div class="terminals">
+      Each Type 6 switch has <code>COM</code>, <code>L1</code> and <code>L2</code>. In one
+      position COM connects to L1; in the other, COM connects to L2. The two L1/L2 wires running
+      between the switches are the <strong>travellers</strong>.
+    </div>
+
+    <h2>Step by step</h2>
+    <ol>
+      <li>Connect the line <code>L</code> from the power source to <code>COM</code> on switch A.</li>
+      <li>Connect switch A <code>L1</code> to switch B <code>L1</code>, and switch A <code>L2</code> to switch B <code>L2</code> — these are the two travellers.</li>
+      <li>Connect <code>COM</code> on switch B to the lamp's <code>L</code> terminal.</li>
+      <li>Connect the lamp's <code>N</code> back to the power source <code>N</code>.</li>
+    </ol>
+    <p>
+      Toggle either switch: whenever COM on switch A and COM on switch B are linked through the
+      same traveller, the circuit is complete and the lamp lights. Flip either switch and the
+      path breaks. That is exactly how stairway lighting works.
+    </p>
+
+    <a class="cta" href="/">Try it in the simulator →</a>
+
+    <div class="related">
+      <strong>Related guides</strong>
+      <ul>
+        <li><a href="/guides/intermediate-cross-switch-wiring.html">Control a light from three or more places (intermediate / cross switch)</a></li>
+        <li><a href="/guides/relay-no-nc-contacts.html">Relay NO vs NC contacts explained</a></li>
+      </ul>
+    </div>
+
+    <div class="disclaimer">
+      <strong>For learning purposes only.</strong> This guide and simulator must not be relied
+      on for actual live installations. Always consult a qualified electrician and follow local
+      regulations.
+    </div>
+
+    <footer>© Virtual Installation Cubicle · <a href="/" style="color:#8595a4">Home</a></footer>
+  </div>
+</body>
+</html>

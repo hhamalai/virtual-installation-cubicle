@@ -1,0 +1,12 @@
+{
+  "name": "Virtual Installation Cubicle",
+  "short_name": "Wiring Cubicle",
+  "description": "Free browser-based electrical wiring simulator for switches, relays and lamps.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#1976d2",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

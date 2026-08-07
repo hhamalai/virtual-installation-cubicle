@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intermediate (Cross) Switch Wiring: Control a Light from 3+ Places</title>
+  <meta name="description" content="How to add an intermediate (cross) switch between two two-way switches to control one lamp from three or more locations, with terminal connections explained and a free simulator.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1976d2">
+  <link rel="canonical" href="https://virtual-installation-cubicle.netlify.app/guides/intermediate-cross-switch-wiring.html">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Intermediate (Cross) Switch Wiring: Control a Light from 3+ Places">
+  <meta property="og:description" content="Add a cross switch between two two-way switches to control a lamp from three or more locations. Step by step, then try it in a free simulator.">
+  <meta property="og:url" content="https://virtual-installation-cubicle.netlify.app/guides/intermediate-cross-switch-wiring.html">
+  <meta property="og:image" content="https://virtual-installation-cubicle.netlify.app/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to wire an intermediate (cross) switch to control a light from three or more places",
+    "description": "Place an intermediate (cross) switch between two changeover switches so a single lamp can be controlled from three or more locations.",
+    "totalTime": "PT8M",
+    "tool": [
+      { "@type": "HowToTool", "name": "Two changeover (two-way) switches" },
+      { "@type": "HowToTool", "name": "One or more intermediate (cross) switches" },
+      { "@type": "HowToTool", "name": "One lamp" },
+      { "@type": "HowToTool", "name": "A line/neutral power source" }
+    ],
+    "step": [
+      { "@type": "HowToStep", "name": "Feed the first switch", "text": "Connect line (L) to the common (COM) of the first two-way switch." },
+      { "@type": "HowToStep", "name": "Into the cross switch", "text": "Connect the two travellers (L1, L2) of the first switch to the two inputs (IN1, IN2) of the intermediate switch." },
+      { "@type": "HowToStep", "name": "Out of the cross switch", "text": "Connect the two outputs (OUT1, OUT2) of the intermediate switch to the travellers (L1, L2) of the second two-way switch." },
+      { "@type": "HowToStep", "name": "Feed the lamp", "text": "Connect the common (COM) of the second two-way switch to the lamp, and the lamp neutral back to the source. All three switches now control the lamp." }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://virtual-installation-cubicle.netlify.app/" },
+      { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://virtual-installation-cubicle.netlify.app/guides/" },
+      { "@type": "ListItem", "position": 3, "name": "Intermediate (cross) switch wiring", "item": "https://virtual-installation-cubicle.netlify.app/guides/intermediate-cross-switch-wiring.html" }
+    ]
+  }
+  </script>
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#333;line-height:1.65;background:#fff}
+    .wrap{max-width:760px;margin:0 auto;padding:32px 24px 80px}
+    .crumbs{font-size:13px;color:#8595a4;margin-bottom:20px}
+    .crumbs a{color:#1976d2;text-decoration:none}
+    h1{font-size:28px;margin-bottom:14px;color:#1a2733}
+    h2{font-size:20px;margin:30px 0 10px;color:#1a2733}
+    p,li{color:#4a5763;font-size:16px;margin-bottom:10px}
+    ol,ul{padding-left:24px;margin:10px 0}
+    .cta{display:inline-block;margin:20px 0;padding:11px 22px;background:#1976d2;color:#fff;border-radius:6px;text-decoration:none;font-size:15px}
+    .terminals{background:#f6f8fa;border:1px solid #e3e8ee;border-radius:6px;padding:14px 18px;margin:14px 0;font-size:15px}
+    .disclaimer{margin-top:30px;padding:14px 16px;border-left:4px solid #f0ad4e;background:#fff8ec;font-size:14px}
+    .related{margin-top:34px;border-top:1px solid #eee;padding-top:18px}
+    .related a{color:#1976d2}
+    footer{margin-top:30px;font-size:13px;color:#8595a4}
+    code{background:#eef2f6;padding:1px 6px;border-radius:4px;font-size:14px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="crumbs"><a href="/">Virtual Installation Cubicle</a> › <a href="/guides/index.html">Guides</a> › Intermediate (cross) switch wiring</nav>
+
+    <h1>Intermediate (cross) switch wiring: control a light from three or more places</h1>
+    <p>
+      To control one lamp from three or more locations you keep a <strong>two-way switch</strong>
+      at each end and add an <strong>intermediate</strong> switch — also called a
+      <strong>cross</strong> or <strong>four-way</strong> switch — in the middle of the two
+      travellers. Each intermediate switch either passes the travellers straight through or
+      swaps them over, which flips the circuit. This guide shows the connections and lets you
+      build it in a free browser simulator.
+    </p>
+
+    <a class="cta" href="/">Open the simulator →</a>
+
+    <h2>What you need</h2>
+    <ul>
+      <li>Two changeover switches (the <strong>Type 6</strong> switch in the simulator)</li>
+      <li>One intermediate/cross switch per extra location (the <strong>Type 7</strong> switch)</li>
+      <li>One lamp and a line/neutral power source</li>
+    </ul>
+
+    <h2>The terminals</h2>
+    <div class="terminals">
+      The intermediate <strong>Type 7</strong> switch has <code>IN1</code>, <code>IN2</code>,
+      <code>OUT1</code>, <code>OUT2</code>. In one position IN1→OUT1 and IN2→OUT2 (straight
+      through); in the other IN1→OUT2 and IN2→OUT1 (crossed). It always sits <em>between</em>
+      the travellers of the two two-way switches.
+    </div>
+
+    <h2>Step by step</h2>
+    <ol>
+      <li>Connect line <code>L</code> to <code>COM</code> of the first Type 6 switch.</li>
+      <li>Connect that switch's <code>L1</code> and <code>L2</code> to the intermediate switch <code>IN1</code> and <code>IN2</code>.</li>
+      <li>Connect the intermediate switch <code>OUT1</code> and <code>OUT2</code> to <code>L1</code> and <code>L2</code> of the second Type 6 switch.</li>
+      <li>Connect <code>COM</code> of the second switch to the lamp's <code>L</code>, and the lamp's <code>N</code> back to the source <code>N</code>.</li>
+    </ol>
+    <p>
+      Add more intermediate switches in series along the travellers for four, five or more
+      switch positions. Any switch you flip toggles the lamp.
+    </p>
+
+    <a class="cta" href="/">Try it in the simulator →</a>
+
+    <div class="related">
+      <strong>Related guides</strong>
+      <ul>
+        <li><a href="/guides/two-way-switch-wiring.html">How to wire a two-way switch (two locations)</a></li>
+        <li><a href="/guides/relay-no-nc-contacts.html">Relay NO vs NC contacts explained</a></li>
+      </ul>
+    </div>
+
+    <div class="disclaimer">
+      <strong>For learning purposes only.</strong> This guide and simulator must not be relied
+      on for actual live installations. Always consult a qualified electrician and follow local
+      regulations.
+    </div>
+
+    <footer>© Virtual Installation Cubicle · <a href="/" style="color:#8595a4">Home</a></footer>
+  </div>
+</body>
+</html>

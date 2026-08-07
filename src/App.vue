@@ -27,6 +27,23 @@
     <div class="main">
       <header>
         <h1>Virtual Installation Cubicle</h1>
+        <nav ref="navRef" class="doc-nav">
+          <button
+            type="button"
+            class="doc-menu-btn"
+            :class="{ open: menuOpen }"
+            :aria-expanded="menuOpen"
+            @click="toggleMenu"
+          >
+            Guides <span class="caret">▾</span>
+          </button>
+          <div v-if="menuOpen" class="doc-menu" role="menu">
+            <a href="/guides/two-way-switch-wiring.html" role="menuitem" @click="onDocLink($event, '/guides/two-way-switch-wiring.html')">Two-way switches</a>
+            <a href="/guides/intermediate-cross-switch-wiring.html" role="menuitem" @click="onDocLink($event, '/guides/intermediate-cross-switch-wiring.html')">Cross switches</a>
+            <a href="/guides/relay-no-nc-contacts.html" role="menuitem" @click="onDocLink($event, '/guides/relay-no-nc-contacts.html')">Relays</a>
+            <a href="/guides/index.html" role="menuitem" class="doc-menu-all" @click="onDocLink($event, '/guides/index.html')">All guides</a>
+          </div>
+        </nav>
         <div class="controls">
           <button class="btn-clear" @click="clearAll">Clear All</button>
         </div>
@@ -53,13 +70,21 @@
         <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
       </svg>
     </a>
+
+    <DocsDrawer
+      :open="docsOpen"
+      :src="activeDoc"
+      @close="docsOpen = false"
+      @navigate="activeDoc = $event"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import Toolbox from './components/Toolbox.vue'
 import Canvas from './components/Canvas.vue'
+import DocsDrawer from './components/DocsDrawer.vue'
 import { useCircuitStore } from './stores/circuit'
 
 interface ToolboxExposed {
@@ -71,10 +96,68 @@ const toolboxRef = ref<InstanceType<typeof Toolbox> & ToolboxExposed | null>(nul
 const selectedCable = ref<string | null>(null)
 const selectedComponent = ref<string | null>(null)
 const selectedWireColor = ref<string>('#333333')
-const showDisclaimer = ref<boolean>(true)
+
+const docsOpen = ref<boolean>(false)
+const activeDoc = ref<string>('/guides/index.html')
+const menuOpen = ref<boolean>(false)
+const navRef = ref<HTMLElement | null>(null)
+
+const toggleMenu = (): void => {
+  menuOpen.value = !menuOpen.value
+}
+
+// Open a guide in the in-app drawer, but let cmd/ctrl/shift-click fall through to
+// the standalone page (new tab) so links stay shareable and crawlable.
+const onDocLink = (event: MouseEvent, url: string): void => {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+    menuOpen.value = false
+    return
+  }
+  event.preventDefault()
+  activeDoc.value = url
+  docsOpen.value = true
+  menuOpen.value = false
+}
+
+const onDocumentClick = (event: MouseEvent): void => {
+  if (menuOpen.value && navRef.value && !navRef.value.contains(event.target as Node)) {
+    menuOpen.value = false
+  }
+}
+
+const onDocumentKey = (event: KeyboardEvent): void => {
+  if (event.key === 'Escape') menuOpen.value = false
+}
+
+onMounted(() => {
+  document.addEventListener('click', onDocumentClick)
+  document.addEventListener('keydown', onDocumentKey)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', onDocumentClick)
+  document.removeEventListener('keydown', onDocumentKey)
+})
+
+const DISCLAIMER_ACK_KEY = 'electric-disclaimer-acknowledged'
+
+const isDisclaimerAcknowledged = (): boolean => {
+  try {
+    return localStorage.getItem(DISCLAIMER_ACK_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
+const showDisclaimer = ref<boolean>(!isDisclaimerAcknowledged())
 
 const dismissDisclaimer = (): void => {
   showDisclaimer.value = false
+  try {
+    localStorage.setItem(DISCLAIMER_ACK_KEY, 'true')
+  } catch {
+    // Ignore storage failures (e.g. private mode); disclaimer will reappear next load.
+  }
 }
 
 const { clearAll: storeClearAll, cancelWiring } = useCircuitStore()
@@ -137,6 +220,8 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px 20px;
+  flex-wrap: wrap;
   padding: 10px 20px;
   background: #fff;
   border-bottom: 1px solid #ddd;
@@ -147,6 +232,70 @@ header h1 {
   font-weight: 500;
   color: #333;
   margin: 0;
+}
+
+.doc-nav {
+  position: relative;
+  margin-right: auto;
+}
+
+.doc-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #1976d2;
+  background: #fff;
+  border: 1px solid #cfd8e3;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.doc-menu-btn:hover,
+.doc-menu-btn.open {
+  background: #e3f2fd;
+  border-color: #1976d2;
+}
+
+.doc-menu-btn .caret {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.doc-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid #e3e8ee;
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-menu a {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #333;
+  text-decoration: none;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.doc-menu a:hover {
+  background: #f0f6fd;
+  color: #1976d2;
+}
+
+.doc-menu-all {
+  margin-top: 4px;
+  border-top: 1px solid #eef2f6;
+  color: #5a6b7a !important;
 }
 
 .controls {

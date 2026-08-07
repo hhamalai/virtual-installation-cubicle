@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://virtual-installation-cubicle.netlify.app/sitemap.xml
