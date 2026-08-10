@@ -53,6 +53,9 @@ export interface ElementState {
   position2?: number
   crossed?: boolean
   coilEnergized?: boolean
+  // For push buttons - which momentary buttons are held down
+  greenPressed?: boolean
+  redPressed?: boolean
   ports?: JunctionBoxPort[]
   slots?: JunctionBoxSlot[]
   // For cable bundles - which junction box slots they're docked to

@@ -152,6 +152,26 @@
     </div>
 
     <div class="section">
+      <h4>Buttons</h4>
+      <div class="tool-item" :class="{ selected: selectedComponent === 'button' }" draggable="true" @dragstart="onDragStart($event, 'button')" @click="onComponentTap('button')">
+        <svg width="45" height="50" viewBox="0 0 60 90">
+          <rect x="15" y="5" width="30" height="80" rx="3" fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+          <!-- terminals -->
+          <circle cx="23" cy="9" r="2.5" fill="#fff" stroke="#2e7d32" stroke-width="1.2"/>
+          <circle cx="37" cy="9" r="2.5" fill="#fff" stroke="#c62828" stroke-width="1.2"/>
+          <circle cx="23" cy="81" r="2.5" fill="#fff" stroke="#2e7d32" stroke-width="1.2"/>
+          <circle cx="37" cy="81" r="2.5" fill="#fff" stroke="#c62828" stroke-width="1.2"/>
+          <!-- green + red buttons -->
+          <circle cx="23" cy="45" r="9" fill="#1b5e20"/>
+          <circle cx="23" cy="45" r="6.5" fill="#66bb6a"/>
+          <circle cx="37" cy="45" r="9" fill="#b71c1c"/>
+          <circle cx="37" cy="45" r="6.5" fill="#ef5350"/>
+        </svg>
+        <span>Start/Stop Button</span>
+      </div>
+    </div>
+
+    <div class="section">
       <h4>Enclosures</h4>
       <div class="tool-item" :class="{ selected: selectedComponent === 'junction-box' }" draggable="true" @dragstart="onDragStart($event, 'junction-box')" @click="onComponentTap('junction-box')">
         <svg width="50" height="50" viewBox="0 0 100 100">

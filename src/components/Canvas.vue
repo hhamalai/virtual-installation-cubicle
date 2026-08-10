@@ -42,6 +42,8 @@
           @terminal-click="onTerminalClick"
           @wire-terminal-click="onWireTerminalClick"
           @toggle="(switchIndex: number | undefined) => handleToggle(element.id, switchIndex)"
+          @button-press="(id: string, color: 'green' | 'red') => setButtonPressed(id, color, true)"
+          @button-release="(id: string, color: 'green' | 'red') => setButtonPressed(id, color, false)"
           @delete="removeElement(element.id)"
         />
       </g>
@@ -163,6 +165,7 @@ import Switch66 from './elements/Switch66.vue'
 import Switch7 from './elements/Switch7.vue'
 import Cable from './wiring/Cable.vue'
 import Relay from './elements/Relay.vue'
+import PushButton from './elements/PushButton.vue'
 import JunctionBox from './elements/JunctionBox.vue'
 import DistributionBoard from './elements/DistributionBoard.vue'
 
@@ -240,6 +243,7 @@ const {
   removeElement,
   updateElement,
   toggleSwitch,
+  setButtonPressed,
   rotateElement,
   startWiring,
   addControlPoint,
@@ -293,6 +297,7 @@ const componentMap: Record<string, Component> = {
   'relay-no-no': Relay,
   'relay-no-nc': Relay,
   'relay-nc-nc': Relay,
+  'button': PushButton,
   'junction-box': JunctionBox,
   'distribution-board': DistributionBoard
 }
@@ -365,7 +370,7 @@ const onMouseDown = (event: MouseEvent): void => {
   // Left mouse button on empty canvas - start selection rectangle
   if (event.button === 0 && !wiringMode.value) {
     const target = event.target as HTMLElement
-    const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .junction-box, .distribution-board')
+    const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .push-button, .junction-box, .distribution-board')
 
     if (!clickedOnElement && !target.closest('.terminal')) {
       const pos = getSvgPoint(event.clientX, event.clientY)
@@ -523,7 +528,7 @@ const onTouchEnd = (event: TouchEvent): void => {
     const target = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement
 
     // Check if tapped on an element
-    const clickedOnElement = target?.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .junction-box, .distribution-board')
+    const clickedOnElement = target?.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .push-button, .junction-box, .distribution-board')
 
     // Handle tap-to-place component (for touch devices)
     if (props.selectedComponent && !clickedOnElement && !target?.closest('.terminal')) {
@@ -671,9 +676,9 @@ const RELAY_HEIGHT = 90
 const DIN_RAIL_SNAP_DISTANCE = 30 // How close to snap to DIN rail
 const DIN_RAIL_HEIGHT = 12
 
-// Check if element is a relay type
-const isRelayType = (type: string): boolean => {
-  return type.startsWith('relay-')
+// Check if element mounts on a DIN rail (relays and push-button modules)
+const isDinMountable = (type: string): boolean => {
+  return type.startsWith('relay-') || type === 'button'
 }
 
 // Find the closest DIN rail in any distribution board to a given position
@@ -733,7 +738,7 @@ const findClosestDinRail = (x: number, y: number, elementWidth: number): { board
 // Drag handling for elements
 const { startDrag } = useDrag(getSvgPoint, (element: Element, newX: number, newY: number, _isDone: boolean) => {
   // DIN rail snapping for relays
-  if (isRelayType(element.type)) {
+  if (isDinMountable(element.type)) {
     const closestRail = findClosestDinRail(newX, newY, RELAY_WIDTH)
 
     if (closestRail) {
@@ -778,7 +783,7 @@ const { startDrag } = useDrag(getSvgPoint, (element: Element, newX: number, newY
 const onElementMouseDown = (event: MouseEvent, element: Element): void => {
   // Don't start drag if we clicked on a terminal or toggle area or delete button
   const target = event.target as HTMLElement
-  if (target.closest('.terminal') || target.closest('.toggle-area') || target.closest('.delete-btn')) {
+  if (target.closest('.terminal') || target.closest('.toggle-area') || target.closest('.press-btn') || target.closest('.delete-btn')) {
     return
   }
 
@@ -992,7 +997,7 @@ const onCanvasClick = (event: MouseEvent): void => {
   const target = event.target as HTMLElement
 
   // Check if clicked on an element (not empty canvas)
-  const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .junction-box, .distribution-board')
+  const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .push-button, .junction-box, .distribution-board')
 
   // Handle tap-to-place component (for touch devices)
   if (props.selectedComponent && !clickedOnElement && !target.closest('.terminal')) {

@@ -335,6 +335,18 @@ export function useCircuitStore() {
     simulateCircuit()
   }
 
+  const setButtonPressed = (elementId: string, color: 'green' | 'red', pressed: boolean): void => {
+    const element = state.elements.find(el => el.id === elementId)
+    if (!element || element.type !== 'button') return
+
+    if (color === 'green') {
+      element.state.greenPressed = pressed
+    } else {
+      element.state.redPressed = pressed
+    }
+    simulateCircuit()
+  }
+
   // Circuit simulation with wire-level tracking
   const simulateCircuit = (): void => {
     // Reset all energized states
@@ -345,10 +357,10 @@ export function useCircuitStore() {
       if (el.type === 'light' || el.type === 'light-grounded') {
         el.state.on = false
       }
-      // Reset relay coil states
-      if (el.type.startsWith('relay-')) {
-        el.state.coilEnergized = false
-      }
+      // NOTE: relay coil state is intentionally NOT reset here. Retaining the
+      // previous coilEnergized value lets the fixed-point iteration below hold a
+      // self-consistent latched state (seal-in / holding circuits). A coil with no
+      // real supply path still drops out when the outer loop re-derives its state.
     })
 
     // Track wire energization: Map<"cableId-wireIndex", boolean>
@@ -806,6 +818,14 @@ export function useCircuitStore() {
         if (poleClosed(mode2)) conn.push(['3', '4'])
         return conn
       }
+      case 'button': {
+        // Green G1-G2: normally open, conducts only while held.
+        // Red R1-R2: normally closed, conducts unless held.
+        const conn: [string, string][] = []
+        if (element.state.greenPressed) conn.push(['G1', 'G2'])
+        if (!element.state.redPressed) conn.push(['R1', 'R2'])
+        return conn
+      }
       default:
         return []
     }
@@ -1101,6 +1121,7 @@ export function useCircuitStore() {
     updateElement,
     rotateElement,
     selectElement,
+    setButtonPressed,
     startWiring,
     addControlPoint,
     cancelWiring,
@@ -1225,6 +1246,20 @@ function createElementByType(type: string, id: string, x: number, y: number): El
           { id: `${id}-N`, name: 'N', localX: 30, localY: 45, connected: [], energized: false },
           { id: `${id}-2`, name: '2', localX: 7, localY: 90, connected: [], energized: false },
           { id: `${id}-4`, name: '4', localX: 23, localY: 90, connected: [], energized: false }
+        ]
+      }
+    // Momentary push-button module (Hager SVN391 style): 30px wide x 90px tall.
+    // Green pair G1-G2 is a normally-open contact (closes only while held);
+    // red pair R1-R2 is a normally-closed contact (opens only while held).
+    case 'button':
+      return {
+        ...base,
+        state: { greenPressed: false, redPressed: false },
+        terminals: [
+          { id: `${id}-G1`, name: 'G1', localX: 7, localY: 0, connected: [], energized: false, color: '#2e7d32' },
+          { id: `${id}-R1`, name: 'R1', localX: 23, localY: 0, connected: [], energized: false, color: '#c62828' },
+          { id: `${id}-G2`, name: 'G2', localX: 7, localY: 90, connected: [], energized: false, color: '#2e7d32' },
+          { id: `${id}-R2`, name: 'R2', localX: 23, localY: 90, connected: [], energized: false, color: '#c62828' }
         ]
       }
     case 'junction-box': {
