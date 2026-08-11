@@ -1,5 +1,5 @@
 <template>
-  <div class="toolbox">
+  <div class="toolbox" :class="{ collapsed: open === false }">
     <h3>Components</h3>
 
     <div v-if="selectedComponent" class="component-info">
@@ -309,6 +309,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+defineProps<{
+  open?: boolean
+}>()
+
 const emit = defineEmits<{
   'drag-start': [type: string]
   'select-cable': [type: string]
@@ -397,6 +401,25 @@ defineExpose({
   padding: 15px;
   overflow-y: auto;
   height: 100vh;
+  flex-shrink: 0;
+}
+
+.toolbox.collapsed {
+  display: none;
+}
+
+/* On small screens the sidebar floats over the canvas as a drawer so it doesn't
+   permanently eat horizontal space. It sits below the header so the toggle stays
+   reachable. */
+@media (max-width: 700px), (max-height: 500px) {
+  .toolbox {
+    position: absolute;
+    top: 47px;
+    left: 0;
+    height: calc(100% - 47px);
+    z-index: 500;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.25);
+  }
 }
 
 h3 {

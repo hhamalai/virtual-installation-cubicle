@@ -34,6 +34,18 @@
         pointer-events="none"
       />
 
+      <!-- Selection highlight (touch) -->
+      <path
+        v-if="selected"
+        :d="wirePath"
+        stroke="#1976d2"
+        :stroke-width="cableStrokeWidth + 8"
+        fill="none"
+        stroke-linecap="round"
+        opacity="0.35"
+        pointer-events="none"
+      />
+
       <!-- Hover/selection area (wider invisible path) -->
       <path
         :d="wirePath"
@@ -41,7 +53,8 @@
         :stroke-width="cableStrokeWidth + 16"
         fill="none"
         class="cable-hitarea"
-        @click="$emit('remove')"
+        :pointer-events="wiringActive ? 'none' : 'stroke'"
+        @click="onHitClick"
       />
 
       <!-- Control points (shown on hover) -->
@@ -80,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, inject, type Ref } from 'vue'
 import type { Cable as CableType, Wire as WireType, Point } from '../../types'
 
 interface WireEndpoints {
@@ -90,16 +103,32 @@ interface WireEndpoints {
 
 const props = defineProps<{
   cable: CableType
+  selected?: boolean
   getWirePath: (_wire: WireType) => string | null
   getWireEndpoints?: (_wire: WireType) => WireEndpoints | null
 }>()
 
 const emit = defineEmits<{
   'remove': []
+  'select': []
   'update-wire-point': [data: { wire: WireType; index: number; clientX: number; clientY: number }]
 }>()
 
 const hovering = ref(false)
+
+// On touch, a tap selects the cable (so it isn't removed by accident); a mouse
+// click removes it directly, keeping desktop behavior unchanged.
+const isTouchInput = inject<Ref<boolean>>('isTouchInput', ref(false))
+// True while a new wire is being drawn - existing cables must not react to clicks.
+const wiringActive = inject<Ref<boolean>>('wiringActive', ref(false))
+const onHitClick = (): void => {
+  if (wiringActive.value) return
+  if (isTouchInput.value) {
+    emit('select')
+  } else {
+    emit('remove')
+  }
+}
 
 // Get the first completed wire (all wires in a cable share the same path)
 const firstWire = computed(() => {

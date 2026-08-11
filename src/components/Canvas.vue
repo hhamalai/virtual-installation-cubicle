@@ -39,6 +39,7 @@
           :element="element"
           :selected="selectedElementId === element.id || selectedElementIds.has(element.id)"
           @mousedown="onElementMouseDown($event, element)"
+          @touchstart="onElementTouchStart($event, element)"
           @terminal-click="onTerminalClick"
           @wire-terminal-click="onWireTerminalClick"
           @toggle="(switchIndex: number | undefined) => handleToggle(element.id, switchIndex)"
@@ -53,9 +54,11 @@
         v-for="cable in cables"
         :key="cable.id"
         :cable="cable"
+        :selected="selectedCableId === cable.id"
         :get-wire-path="getWirePath"
         :get-wire-endpoints="getWireEndpoints"
         @remove="removeCable(cable.id)"
+        @select="onCableSelect(cable.id)"
         @update-wire-point="onUpdateWirePoint"
       />
 
@@ -71,6 +74,15 @@
           stroke="#fff"
           stroke-width="1.5"
         />
+      </g>
+
+      <!-- Delete button for a touch-selected cable -->
+      <g v-if="cableDeletePos" class="cable-delete-btn"
+         @click.stop="removeSelectedCable"
+         @touchend.stop.prevent="removeSelectedCable">
+        <circle :cx="cableDeletePos.x" :cy="cableDeletePos.y" r="13" fill="#f44336" stroke="#fff" stroke-width="2"/>
+        <path :d="`M ${cableDeletePos.x - 4} ${cableDeletePos.y - 4} L ${cableDeletePos.x + 4} ${cableDeletePos.y + 4} M ${cableDeletePos.x + 4} ${cableDeletePos.y - 4} L ${cableDeletePos.x - 4} ${cableDeletePos.y + 4}`"
+              stroke="#fff" stroke-width="2" stroke-linecap="round"/>
       </g>
 
       <!-- Pending wire (while connecting) - never intercepts terminal hovers -->
@@ -143,6 +155,15 @@
         </text>
       </g>
     </svg>
+    <button v-if="isTouchInput && (wiringMode || pendingCableWire)" class="cancel-wire-fab" @click="cancelActiveWiring">
+      Cancel wire
+    </button>
+
+    <!-- Touch-only action bar for the selected element (no hover/keyboard on mobile) -->
+    <div v-if="isTouchInput && selectedElementId && !wiringMode" class="element-actions">
+      <button @click="rotateSelected">⟳ Rotate</button>
+      <button @click="deleteSelected">🗑 Delete</button>
+    </div>
     <div class="canvas-help">
       Scroll to zoom • Middle-click to pan • R to rotate • Del to delete • Drag to select multiple
     </div>
@@ -209,6 +230,12 @@ const panStart = ref<Point>({ x: 0, y: 0 })
 const selectedElementId = ref<string | null>(null)
 const selectedElementIds = ref<Set<string>>(new Set())
 
+// True when the last input came from touch. Lets touch use its own tap logic
+// (in onTouchEnd) while the mouse handlers stay exactly as they were on desktop.
+const isTouchInput = ref(false)
+// Cable selected for deletion on touch (tap-to-select instead of tap-to-remove).
+const selectedCableId = ref<string | null>(null)
+
 // Rectangular selection state
 const isSelecting = ref(false)
 const selectionStart = ref<Point>({ x: 0, y: 0 })
@@ -257,10 +284,17 @@ const {
 // Provide circuit state to child components (for JunctionBox to look up cable info and cables)
 // Provide the entire reactive state object so changes are properly tracked
 provide('circuitState', state)
+// Let child components (e.g. Cable) know whether the current input is touch.
+provide('isTouchInput', isTouchInput)
 
 const elements = computed(() => state.elements)
 const cables = computed(() => state.cables)
 const wiringMode = computed(() => state.wiringMode)
+
+// While a wire is being drawn, existing cables must be click-through so a click
+// meant to add a control point can't accidentally remove a wire it lands on.
+const wiringActive = computed(() => !!wiringMode.value || !!pendingCableWire.value)
+provide('wiringActive', wiringActive)
 
 const { getWirePath, getTerminalPosition, getEndpointPosition, getWireEndpoints } = useConnections(state)
 
@@ -303,6 +337,77 @@ const componentMap: Record<string, Component> = {
 }
 
 const getComponentType = (type: string): Component => componentMap[type] || PowerInput
+
+// Touch-target radius (~22 CSS px) expressed in SVG units, so it stays constant on
+// screen regardless of zoom. Used to snap taps to nearby terminals.
+const touchSnapRadius = (): number => {
+  const cw = containerRef.value?.offsetWidth || 1
+  return 22 * (viewBox.value.width / cw)
+}
+
+const nearestTerminal = (sp: Point, radius: number): { elementId: string; terminalId: string } | null => {
+  let best: { elementId: string; terminalId: string } | null = null
+  let bestDist = radius
+  for (const el of state.elements) {
+    for (const t of el.terminals) {
+      const pos = getTerminalPosition(el.id, t.id)
+      if (!pos) continue
+      const d = Math.hypot(pos.x - sp.x, pos.y - sp.y)
+      if (d <= bestDist) {
+        bestDist = d
+        best = { elementId: el.id, terminalId: t.id }
+      }
+    }
+  }
+  return best
+}
+
+// Midpoint of the selected cable, where the touch delete button is drawn.
+const cableDeletePos = computed<Point | null>(() => {
+  if (!selectedCableId.value) return null
+  const cable = state.cables.find(c => c.id === selectedCableId.value)
+  if (!cable) return null
+  const wire = cable.wires.find(w => w.from && w.to)
+  if (!wire) return null
+  const ends = getWireEndpoints(wire)
+  if (!ends?.from || !ends?.to) return null
+  return { x: (ends.from.x + ends.to.x) / 2, y: (ends.from.y + ends.to.y) / 2 }
+})
+
+const onCableSelect = (cableId: string): void => {
+  selectedCableId.value = cableId
+  selectedElementId.value = null
+  selectedElementIds.value.clear()
+}
+
+const removeSelectedCable = (): void => {
+  if (selectedCableId.value) {
+    removeCable(selectedCableId.value)
+    selectedCableId.value = null
+  }
+}
+
+const rotateSelected = (): void => {
+  if (selectedElementId.value) rotateElement(selectedElementId.value)
+}
+
+const deleteSelected = (): void => {
+  if (selectedElementId.value) {
+    removeElement(selectedElementId.value)
+    selectedElementId.value = null
+  }
+}
+
+const cancelActiveWiring = (): void => {
+  if (pendingCableWire.value) {
+    pendingCableWire.value = null
+  }
+  if (wiringMode.value) {
+    cancelWiring()
+    pendingWire.value = null
+    emit('wire-complete')
+  }
+}
 
 // Convert screen coordinates to SVG coordinates using native SVG transformation
 const getSvgPoint = (clientX: number, clientY: number): Point => {
@@ -359,6 +464,8 @@ const onMouseMove = (event: MouseEvent): void => {
 }
 
 const onMouseDown = (event: MouseEvent): void => {
+  isTouchInput.value = false
+
   // Middle mouse button for panning
   if (event.button === 1) {
     event.preventDefault()
@@ -427,6 +534,8 @@ const pinchStartMidpoint = ref<Point | null>(null)
 const pinchStartViewBox = ref<ViewBox | null>(null)
 
 const onTouchStart = (event: TouchEvent): void => {
+  isTouchInput.value = true
+
   if (event.touches.length === 1) {
     const touch = event.touches[0]
     touchStartPos.value = { x: touch.clientX, y: touch.clientY }
@@ -522,19 +631,43 @@ const onTouchMove = (event: TouchEvent): void => {
 }
 
 const onTouchEnd = (event: TouchEvent): void => {
-  // Only handle as tap if it wasn't a drag and not pinching
-  if (!isTouchDragging.value && touchStartPos.value && event.changedTouches.length === 1 && !pinchStartDistance.value) {
+  const wasPinch = pinchStartDistance.value !== null
+  const moved = isTouchDragging.value
+
+  if (!wasPinch && touchStartPos.value && event.changedTouches.length === 1) {
     const touch = event.changedTouches[0]
-    const target = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement
+    const targetEl = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement | null
+    // Terminals, toggles, push buttons, delete and cable-delete taps are handled by
+    // their own click/touch handlers - don't double-handle them here.
+    const onInteractive = targetEl?.closest('.terminal, .toggle-area, .press-btn, .delete-btn, .cable-delete-btn')
 
-    // Check if tapped on an element
-    const clickedOnElement = target?.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .push-button, .junction-box, .distribution-board')
-
-    // Handle tap-to-place component (for touch devices)
-    if (props.selectedComponent && !clickedOnElement && !target?.closest('.terminal')) {
+    if (!onInteractive) {
       const pos = getSvgPoint(touch.clientX, touch.clientY)
-      addElement(props.selectedComponent, pos.x - 30, pos.y - 20)
-      emit('component-placed')
+
+      if (props.selectedComponent) {
+        addElement(props.selectedComponent, pos.x - 30, pos.y - 20)
+        emit('component-placed')
+      } else if (wiringMode.value) {
+        // Snap to a nearby terminal to finish the wire; only add a control point
+        // when the tap is genuinely far from any terminal.
+        const near = nearestTerminal(pos, touchSnapRadius())
+        if (near) {
+          onTerminalClick(near.elementId, near.terminalId)
+        } else if (!moved) {
+          addControlPoint(pos.x, pos.y)
+          if (pendingWire.value) pendingWire.value.controlPoints.push({ x: pos.x, y: pos.y })
+        }
+      } else if (!moved) {
+        const near = nearestTerminal(pos, touchSnapRadius())
+        if (near) {
+          onTerminalClick(near.elementId, near.terminalId)
+        } else if (!targetEl?.closest('.cable-hitarea')) {
+          // Empty space - deselect. Cable taps are selected by the cable itself.
+          selectedElementId.value = null
+          selectedElementIds.value.clear()
+          selectedCableId.value = null
+        }
+      }
     }
   }
 
@@ -831,6 +964,27 @@ const onElementMouseDown = (event: MouseEvent, element: Element): void => {
   startDrag(event, element)
 }
 
+// Touch equivalent of onElementMouseDown: drag an element with one finger.
+const onElementTouchStart = (event: TouchEvent, element: Element): void => {
+  if (event.touches.length !== 1) return
+  const target = event.target as HTMLElement
+  // Let terminals / toggles / buttons / delete handle their own taps.
+  if (target.closest('.terminal') || target.closest('.toggle-area') || target.closest('.press-btn') || target.closest('.delete-btn')) {
+    return
+  }
+  if (wiringMode.value) return
+
+  // Suppress synthesized mouse events (so drag-end can't remove a cable) and keep
+  // the canvas pan/place logic from also firing for this gesture.
+  event.preventDefault()
+  event.stopPropagation()
+  isTouchInput.value = true
+  selectedElementId.value = element.id
+  selectedElementIds.value.clear()
+  selectedCableId.value = null
+  startDrag(event, element)
+}
+
 const onTerminalClick = (elementId: string, terminalId: string): void => {
   // Handle pending cable wire connection first
   if (pendingCableWire.value) {
@@ -994,6 +1148,9 @@ const onUpdateWirePoint = ({ wire, index, clientX, clientY }: WirePointUpdate): 
 }
 
 const onCanvasClick = (event: MouseEvent): void => {
+  // Touch taps are fully handled in onTouchEnd; ignore the synthesized click.
+  if (isTouchInput.value) return
+
   const target = event.target as HTMLElement
 
   // Check if clicked on an element (not empty canvas)
@@ -1023,6 +1180,7 @@ const onCanvasClick = (event: MouseEvent): void => {
     if (!isSelecting.value) {
       selectedElementId.value = null
       selectedElementIds.value.clear()
+      selectedCableId.value = null
     }
   }
 }
@@ -1143,7 +1301,65 @@ onUnmounted(() => {
   border-radius: 4px;
 }
 
+/* The help text is desktop-oriented (scroll/middle-click); hide it on touch-sized screens. */
+@media (max-width: 700px) {
+  .canvas-help {
+    display: none;
+  }
+}
+
 .instructions text {
   font-weight: 500;
+}
+
+.cable-delete-btn {
+  cursor: pointer;
+}
+
+.cancel-wire-fab {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  background: #f44336;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  z-index: 20;
+}
+
+.cancel-wire-fab:hover {
+  background: #d32f2f;
+}
+
+.element-actions {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 20;
+}
+
+.element-actions button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 20px;
+  background: #1976d2;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.element-actions button:last-child {
+  background: #f44336;
 }
 </style>

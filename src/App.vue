@@ -1,5 +1,5 @@
 <template>
-  <div class="app">
+  <div ref="appRef" class="app">
     <div v-if="showDisclaimer" class="disclaimer-overlay" @click.self="dismissDisclaimer">
       <div class="disclaimer-dialog" role="dialog" aria-modal="true" aria-labelledby="disclaimer-title">
         <h2 id="disclaimer-title">⚠️ For learning purposes only</h2>
@@ -19,6 +19,7 @@
 
     <Toolbox
       ref="toolboxRef"
+      :open="sidebarOpen"
       @select-cable="onSelectCable"
       @cancel-cable="onCancelCable"
       @select-component="onSelectComponent"
@@ -26,6 +27,7 @@
     />
     <div class="main">
       <header>
+        <button class="icon-btn" :title="sidebarOpen ? 'Hide components' : 'Show components'" aria-label="Toggle components" @click="sidebarOpen = !sidebarOpen">☰</button>
         <h1>Virtual Installation Cubicle</h1>
         <nav ref="navRef" class="doc-nav">
           <button
@@ -45,6 +47,7 @@
           </div>
         </nav>
         <div class="controls">
+          <button class="icon-btn" title="Toggle fullscreen" aria-label="Toggle fullscreen" @click="toggleFullscreen">⛶</button>
           <button class="btn-clear" @click="clearAll">Clear All</button>
         </div>
       </header>
@@ -96,6 +99,20 @@ const toolboxRef = ref<InstanceType<typeof Toolbox> & ToolboxExposed | null>(nul
 const selectedCable = ref<string | null>(null)
 const selectedComponent = ref<string | null>(null)
 const selectedWireColor = ref<string>('#333333')
+
+const appRef = ref<HTMLElement | null>(null)
+// Components sidebar: shown by default on desktop, hidden by default on small
+// screens (narrow width or short height, e.g. a phone in landscape).
+const isSmallScreen = (): boolean => window.innerWidth <= 700 || window.innerHeight <= 500
+const sidebarOpen = ref<boolean>(!isSmallScreen())
+
+const toggleFullscreen = (): void => {
+  if (!document.fullscreenElement) {
+    appRef.value?.requestFullscreen?.().catch(() => {})
+  } else {
+    document.exitFullscreen?.()
+  }
+}
 
 const docsOpen = ref<boolean>(false)
 const activeDoc = ref<string>('/guides/index.html')
@@ -164,6 +181,7 @@ const { clearAll: storeClearAll, cancelWiring } = useCircuitStore()
 
 const onSelectCable = (cableType: string): void => {
   selectedCable.value = cableType
+  if (isSmallScreen()) sidebarOpen.value = false
 }
 
 const onCancelCable = (): void => {
@@ -173,10 +191,12 @@ const onCancelCable = (): void => {
 
 const onSelectComponent = (componentType: string): void => {
   selectedComponent.value = componentType
+  if (isSmallScreen()) sidebarOpen.value = false
 }
 
 const onSelectWireColor = (color: string): void => {
   selectedWireColor.value = color
+  if (isSmallScreen()) sidebarOpen.value = false
 }
 
 const onComponentPlaced = (): void => {
@@ -207,6 +227,35 @@ const clearAll = (): void => {
   display: flex;
   height: 100vh;
   width: 100vw;
+  position: relative;
+}
+
+.icon-btn {
+  /* Desktop stays unchanged: these controls only appear on small/short screens. */
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 1;
+  color: #444;
+}
+
+@media (max-width: 700px), (max-height: 500px) {
+  .icon-btn {
+    display: inline-flex;
+  }
+}
+
+.icon-btn:hover {
+  background: #f0f0f0;
+  border-color: #1976d2;
 }
 
 .main {
@@ -347,6 +396,41 @@ footer p {
 .github-link:hover {
   opacity: 1;
   color: #333;
+}
+
+/* Reclaim vertical space on short viewports (landscape phones). */
+@media (max-height: 500px) {
+  header {
+    padding: 4px 10px;
+  }
+  header h1 {
+    font-size: 14px;
+  }
+  footer {
+    display: none;
+  }
+  .github-link {
+    display: none;
+  }
+}
+
+/* Narrow screens: compact header, hide the desktop-oriented footer. */
+@media (max-width: 700px) {
+  header {
+    padding: 6px 10px;
+  }
+  header h1 {
+    font-size: 15px;
+  }
+  footer {
+    display: none;
+  }
+}
+
+@media (max-width: 460px) {
+  header h1 {
+    display: none;
+  }
 }
 
 .disclaimer-overlay {
