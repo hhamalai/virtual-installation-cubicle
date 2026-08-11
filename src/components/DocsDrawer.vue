@@ -44,7 +44,8 @@ const guides = [
   { label: 'All guides', url: '/guides/index.html' },
   { label: 'Two-way switches', url: '/guides/two-way-switch-wiring.html' },
   { label: 'Cross switches', url: '/guides/intermediate-cross-switch-wiring.html' },
-  { label: 'Relays', url: '/guides/relay-no-nc-contacts.html' }
+  { label: 'Relays', url: '/guides/relay-no-nc-contacts.html' },
+  { label: 'Timer', url: '/guides/multifunction-timer.html' }
 ]
 
 const frameRef = ref<HTMLIFrameElement | null>(null)

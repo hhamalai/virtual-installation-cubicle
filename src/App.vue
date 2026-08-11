@@ -43,6 +43,7 @@
             <a href="/guides/two-way-switch-wiring.html" role="menuitem" @click="onDocLink($event, '/guides/two-way-switch-wiring.html')">Two-way switches</a>
             <a href="/guides/intermediate-cross-switch-wiring.html" role="menuitem" @click="onDocLink($event, '/guides/intermediate-cross-switch-wiring.html')">Cross switches</a>
             <a href="/guides/relay-no-nc-contacts.html" role="menuitem" @click="onDocLink($event, '/guides/relay-no-nc-contacts.html')">Relays</a>
+            <a href="/guides/multifunction-timer.html" role="menuitem" @click="onDocLink($event, '/guides/multifunction-timer.html')">Timer</a>
             <a href="/guides/index.html" role="menuitem" class="doc-menu-all" @click="onDocLink($event, '/guides/index.html')">All guides</a>
           </div>
         </nav>

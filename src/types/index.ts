@@ -56,6 +56,11 @@ export interface ElementState {
   // For push buttons - which momentary buttons are held down
   greenPressed?: boolean
   redPressed?: boolean
+  // For the multifunction timer
+  timerFunction?: string   // 'E' | 'Ec' | 'R' | 'Wu' | 'Ws' | 'Wa' | 'Bp'
+  timerDuration?: number   // seconds (0.1 - 60)
+  timerOutput?: boolean    // output relay R state
+  timerSupplied?: boolean  // supply present (green LED)
   ports?: JunctionBoxPort[]
   slots?: JunctionBoxSlot[]
   // For cable bundles - which junction box slots they're docked to

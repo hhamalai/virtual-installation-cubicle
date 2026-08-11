@@ -97,6 +97,9 @@ export function useCircuitStore() {
           wire.from?.elementId === id || wire.to?.elementId === id
         )
       })
+      const rt = timerRuntimes.get(id)
+      if (rt?.handle) clearTimeout(rt.handle)
+      timerRuntimes.delete(id)
       state.elements.splice(index, 1)
       simulateCircuit()
     }
@@ -344,6 +347,153 @@ export function useCircuitStore() {
     } else {
       element.state.redPressed = pressed
     }
+    simulateCircuit()
+  }
+
+  // --- Multifunction timer runtime (real-time, not persisted) ---------------
+  interface TimerRuntime {
+    supply: boolean
+    control: boolean
+    phase: string // 'idle' | 'timing' | 'held' | 'pause' | 'on' | 'spent'
+    handle: ReturnType<typeof setTimeout> | null
+  }
+  const timerRuntimes = new Map<string, TimerRuntime>()
+
+  const getTimerRuntime = (id: string): TimerRuntime => {
+    let rt = timerRuntimes.get(id)
+    if (!rt) {
+      rt = { supply: false, control: false, phase: 'idle', handle: null }
+      timerRuntimes.set(id, rt)
+    }
+    return rt
+  }
+
+  const clearTimerHandle = (rt: TimerRuntime): void => {
+    if (rt.handle !== null) {
+      clearTimeout(rt.handle)
+      rt.handle = null
+    }
+  }
+
+  const scheduleTimer = (elementId: string, seconds: number): void => {
+    const rt = getTimerRuntime(elementId)
+    clearTimerHandle(rt)
+    rt.handle = setTimeout(() => {
+      rt.handle = null
+      onTimerElapsed(elementId)
+    }, Math.max(50, seconds * 1000))
+  }
+
+  // A scheduled delay finished: advance the timer's output/phase, then re-simulate.
+  const onTimerElapsed = (elementId: string): void => {
+    const el = state.elements.find(e => e.id === elementId)
+    if (!el || el.type !== 'timer') return
+    const rt = getTimerRuntime(elementId)
+    const fn = el.state.timerFunction || 'E'
+    const t = el.state.timerDuration || 1
+
+    switch (fn) {
+      case 'E':
+        el.state.timerOutput = true
+        break
+      case 'Ec':
+        if (rt.control) el.state.timerOutput = true
+        break
+      case 'R':
+        el.state.timerOutput = false
+        rt.phase = 'idle'
+        break
+      case 'Wu':
+        el.state.timerOutput = false
+        break
+      case 'Ws':
+      case 'Wa':
+        el.state.timerOutput = false
+        rt.phase = 'spent'
+        break
+      case 'Bp':
+        if (rt.phase === 'pause') {
+          el.state.timerOutput = true
+          rt.phase = 'on'
+        } else {
+          el.state.timerOutput = false
+          rt.phase = 'pause'
+        }
+        scheduleTimer(elementId, t)
+        break
+    }
+    simulateCircuit()
+  }
+
+  // React to supply/control edges for one timer. Returns true if the output changed.
+  const evaluateTimer = (el: Element, supply: boolean, control: boolean): boolean => {
+    const rt = getTimerRuntime(el.id)
+    const before = el.state.timerOutput || false
+    const t = el.state.timerDuration || 1
+    const fn = el.state.timerFunction || 'E'
+
+    const supplyRising = supply && !rt.supply
+    const controlRising = control && !rt.control
+    const controlFalling = !control && rt.control
+
+    el.state.timerSupplied = supply
+
+    if (!supply) {
+      clearTimerHandle(rt)
+      rt.phase = 'idle'
+      el.state.timerOutput = false
+    } else {
+      switch (fn) {
+        case 'E':
+          if (supplyRising) { el.state.timerOutput = false; scheduleTimer(el.id, t) }
+          break
+        case 'Ec':
+          if (controlRising) { el.state.timerOutput = false; scheduleTimer(el.id, t) }
+          else if (controlFalling) { clearTimerHandle(rt); el.state.timerOutput = false }
+          break
+        case 'R':
+          if (supplyRising) { clearTimerHandle(rt); el.state.timerOutput = control; rt.phase = control ? 'held' : 'idle' }
+          if (controlRising) { clearTimerHandle(rt); el.state.timerOutput = true; rt.phase = 'held' }
+          else if (controlFalling) { el.state.timerOutput = true; rt.phase = 'timing'; scheduleTimer(el.id, t) }
+          break
+        case 'Wu':
+          if (supplyRising) { el.state.timerOutput = true; scheduleTimer(el.id, t) }
+          break
+        case 'Ws':
+          if (controlRising && rt.phase !== 'timing') { el.state.timerOutput = true; rt.phase = 'timing'; scheduleTimer(el.id, t) }
+          else if (controlFalling && rt.phase === 'spent') { rt.phase = 'idle' }
+          break
+        case 'Wa':
+          if (controlFalling && rt.phase !== 'timing') { el.state.timerOutput = true; rt.phase = 'timing'; scheduleTimer(el.id, t) }
+          else if (controlRising && rt.phase === 'spent') { rt.phase = 'idle' }
+          break
+        case 'Bp':
+          if (supplyRising) { el.state.timerOutput = false; rt.phase = 'pause'; scheduleTimer(el.id, t) }
+          break
+      }
+    }
+
+    rt.supply = supply
+    rt.control = control
+    return (el.state.timerOutput || false) !== before
+  }
+
+  const resetTimerRuntime = (id: string): void => {
+    const rt = getTimerRuntime(id)
+    clearTimerHandle(rt)
+    rt.phase = 'idle'
+    rt.supply = false
+    rt.control = false
+  }
+
+  const setTimerConfig = (elementId: string, updates: { timerFunction?: string; timerDuration?: number }): void => {
+    const el = state.elements.find(e => e.id === elementId)
+    if (!el || el.type !== 'timer') return
+    if (updates.timerFunction !== undefined) el.state.timerFunction = updates.timerFunction
+    if (updates.timerDuration !== undefined) el.state.timerDuration = updates.timerDuration
+    // Per the datasheet, changes take effect from the de-energised state - restart cleanly.
+    resetTimerRuntime(elementId)
+    el.state.timerOutput = false
     simulateCircuit()
   }
 
@@ -595,8 +745,23 @@ export function useCircuitStore() {
         }
       })
 
-      // If no coil states changed, the simulation is fully stable
-      if (!coilStateChanged) break
+      // Evaluate multifunction timers: derive supply/control and react to edges.
+      let timerStateChanged = false
+      state.elements.forEach(el => {
+        if (el.type === 'timer') {
+          const a1 = el.terminals.find(t => t.name === 'A1')
+          const a2 = el.terminals.find(t => t.name === 'A2')
+          const b1 = el.terminals.find(t => t.name === 'B1')
+          const supply =
+            ((a1?.energized || false) && isConnectedToNeutral(el.id, a2?.id)) ||
+            ((a2?.energized || false) && isConnectedToNeutral(el.id, a1?.id))
+          const control = b1?.energized || false
+          if (evaluateTimer(el, supply, control)) timerStateChanged = true
+        }
+      })
+
+      // If nothing changed the contact topology, the simulation is fully stable.
+      if (!coilStateChanged && !timerStateChanged) break
 
       // Coil states changed - topology changed. Reset all terminal energy and
       // wire latches, then re-propagate under the new contact states.
@@ -826,12 +991,17 @@ export function useCircuitStore() {
         if (!element.state.redPressed) conn.push(['R1', 'R2'])
         return conn
       }
+      case 'timer':
+        // Output changeover: R energized -> 15-18 (NO) closed; otherwise 15-16 (NC).
+        return element.state.timerOutput ? [['15', '18']] : [['15', '16']]
       default:
         return []
     }
   }
 
   const clearAll = (): void => {
+    timerRuntimes.forEach(rt => { if (rt.handle) clearTimeout(rt.handle) })
+    timerRuntimes.clear()
     state.elements = []
     state.cables = []
     state.drawnCables = []
@@ -1122,6 +1292,7 @@ export function useCircuitStore() {
     rotateElement,
     selectElement,
     setButtonPressed,
+    setTimerConfig,
     startWiring,
     addControlPoint,
     cancelWiring,
@@ -1260,6 +1431,22 @@ function createElementByType(type: string, id: string, x: number, y: number): El
           { id: `${id}-R1`, name: 'R1', localX: 23, localY: 0, connected: [], energized: false, color: '#c62828' },
           { id: `${id}-G2`, name: 'G2', localX: 7, localY: 90, connected: [], energized: false, color: '#2e7d32' },
           { id: `${id}-R2`, name: 'R2', localX: 23, localY: 90, connected: [], energized: false, color: '#c62828' }
+        ]
+      }
+    // Multifunction time relay (Hager EZM100 style): 44px wide x 90px tall.
+    // Top: A1 (supply L), B1 (control), 15 (output COM).
+    // Bottom: A2 (supply N), 16 (output NC), 18 (output NO).
+    case 'timer':
+      return {
+        ...base,
+        state: { timerFunction: 'E', timerDuration: 1, timerOutput: false, timerSupplied: false },
+        terminals: [
+          { id: `${id}-A1`, name: 'A1', localX: 9, localY: 0, connected: [], energized: false, color: '#8B4513' },
+          { id: `${id}-B1`, name: 'B1', localX: 22, localY: 0, connected: [], energized: false, color: '#ff9800' },
+          { id: `${id}-15`, name: '15', localX: 35, localY: 0, connected: [], energized: false },
+          { id: `${id}-A2`, name: 'A2', localX: 9, localY: 90, connected: [], energized: false, color: '#1976d2' },
+          { id: `${id}-16`, name: '16', localX: 22, localY: 90, connected: [], energized: false },
+          { id: `${id}-18`, name: '18', localX: 35, localY: 90, connected: [], energized: false }
         ]
       }
     case 'junction-box': {

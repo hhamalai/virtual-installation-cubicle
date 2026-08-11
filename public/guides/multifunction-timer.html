@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Wire a Multifunction Time Relay (Timer) — Functions Explained</title>
+  <meta name="description" content="Wire a multifunction timing relay: supply A1/A2, control B1 and changeover output 15/16/18. All timer functions explained — on-delay, off-delay, interval, impulse and flasher — with a free simulator.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1976d2">
+  <link rel="canonical" href="https://virtual-installation-cubicle.netlify.app/guides/multifunction-timer.html">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="How to Wire a Multifunction Time Relay (Timer) — Functions Explained">
+  <meta property="og:description" content="Supply, control and output terminals plus every timing function — on-delay, off-delay, interval, impulse and flasher — with a free browser simulator.">
+  <meta property="og:url" content="https://virtual-installation-cubicle.netlify.app/guides/multifunction-timer.html">
+  <meta property="og:image" content="https://virtual-installation-cubicle.netlify.app/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to wire a multifunction time relay",
+    "description": "Connect supply, control and the changeover output of a multifunction timing relay and select a timing function.",
+    "totalTime": "PT6M",
+    "tool": [
+      { "@type": "HowToTool", "name": "Multifunction time relay" },
+      { "@type": "HowToTool", "name": "A line/neutral power source" },
+      { "@type": "HowToTool", "name": "A lamp or load" },
+      { "@type": "HowToTool", "name": "A control switch or button (for control-based functions)" }
+    ],
+    "step": [
+      { "@type": "HowToStep", "name": "Connect the supply", "text": "Wire line (L) to terminal A1 and neutral (N) to terminal A2. This powers the timer." },
+      { "@type": "HowToStep", "name": "Feed the output common", "text": "Bring a line to terminal 15 (the common of the output changeover contact)." },
+      { "@type": "HowToStep", "name": "Connect the load", "text": "Wire the load from terminal 18 (normally-open, active when the output is ON) or 16 (normally-closed, active when the output is OFF), and the load's other side to neutral." },
+      { "@type": "HowToStep", "name": "Add a control signal", "text": "For control-based functions, wire a switch or button from line to terminal B1. Closing it energizes the control input." },
+      { "@type": "HowToStep", "name": "Select function and time", "text": "Tap the timer's front face to open settings, choose a function and set the delay between 0.1 and 60 seconds." }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://virtual-installation-cubicle.netlify.app/" },
+      { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://virtual-installation-cubicle.netlify.app/guides/" },
+      { "@type": "ListItem", "position": 3, "name": "Multifunction time relay", "item": "https://virtual-installation-cubicle.netlify.app/guides/multifunction-timer.html" }
+    ]
+  }
+  </script>
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#333;line-height:1.65;background:#fff}
+    .wrap{max-width:760px;margin:0 auto;padding:32px 24px 80px}
+    .crumbs{font-size:13px;color:#8595a4;margin-bottom:20px}
+    .crumbs a{color:#1976d2;text-decoration:none}
+    h1{font-size:28px;margin-bottom:14px;color:#1a2733}
+    h2{font-size:20px;margin:30px 0 10px;color:#1a2733}
+    p,li{color:#4a5763;font-size:16px;margin-bottom:10px}
+    ol,ul{padding-left:24px;margin:10px 0}
+    .cta{display:inline-block;margin:20px 0;padding:11px 22px;background:#1976d2;color:#fff;border-radius:6px;text-decoration:none;font-size:15px}
+    .terminals{background:#f6f8fa;border:1px solid #e3e8ee;border-radius:6px;padding:14px 18px;margin:14px 0;font-size:15px}
+    table{border-collapse:collapse;margin:14px 0;font-size:15px;width:100%}
+    th,td{border:1px solid #e3e8ee;padding:8px 10px;text-align:left;vertical-align:top}
+    th{background:#f6f8fa}
+    .disclaimer{margin-top:30px;padding:14px 16px;border-left:4px solid #f0ad4e;background:#fff8ec;font-size:14px}
+    .related{margin-top:34px;border-top:1px solid #eee;padding-top:18px}
+    .related a{color:#1976d2}
+    footer{margin-top:30px;font-size:13px;color:#8595a4}
+    code{background:#eef2f6;padding:1px 6px;border-radius:4px;font-size:14px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="crumbs"><a href="/">Virtual Installation Cubicle</a> › <a href="/guides/index.html">Guides</a> › Multifunction time relay</nav>
+
+    <h1>How to wire a multifunction time relay (timer)</h1>
+    <p>
+      A multifunction time relay delays, extends, pulses or repeats a switching action. One
+      device covers many jobs — a staircase light that turns itself off, a pump that keeps
+      running for a while after a signal stops, or a warning light that flashes. This guide
+      explains the terminals, shows the wiring, and describes every timing function, and you
+      can build it all in the free browser simulator.
+    </p>
+
+    <a class="cta" href="/">Open the simulator →</a>
+
+    <h2>The terminals</h2>
+    <div class="terminals">
+      <ul style="margin:0">
+        <li><code>A1</code> / <code>A2</code> — <strong>supply</strong> (line to A1, neutral to A2). This powers the device.</li>
+        <li><code>B1</code> — <strong>control input</strong>. A switch/button between line and B1 is the control signal used by some functions.</li>
+        <li><code>15</code> — output <strong>common (COM)</strong> of the changeover contact.</li>
+        <li><code>16</code> — output <strong>normally-closed (NC)</strong>: connected to 15 while the output is OFF.</li>
+        <li><code>18</code> — output <strong>normally-open (NO)</strong>: connected to 15 while the output is ON.</li>
+      </ul>
+    </div>
+
+    <h2>Basic wiring</h2>
+    <ol>
+      <li>Wire line <code>L</code> to <code>A1</code> and neutral <code>N</code> to <code>A2</code> to power the timer.</li>
+      <li>Bring a line to the output common <code>15</code>.</li>
+      <li>Take the load from <code>18</code> (on when the output is active) or <code>16</code> (on when the output is idle); return the load to <code>N</code>.</li>
+      <li>For control-based functions, wire a switch or button from line to <code>B1</code>.</li>
+      <li>Tap the timer's front face to open <strong>settings</strong>: pick a function and set the time (0.1–60&nbsp;s).</li>
+    </ol>
+    <p>
+      The green <strong>U/t</strong> LED shows the supply is present; the yellow <strong>R</strong>
+      LED shows the output contact is active (15–18 closed).
+    </p>
+
+    <a class="cta" href="/">Try an on-delay lamp →</a>
+
+    <h2>Functions</h2>
+    <p>
+      "t" is the time you set. The output is the changeover contact (15 common, 18 NO, 16 NC).
+      "Supply permanent" means A1/A2 stay powered and the function is driven by the control
+      input B1.
+    </p>
+    <table>
+      <tr><th>Code</th><th>Name</th><th>Behaviour</th></tr>
+      <tr><td><strong>E</strong></td><td>On-delay</td><td>When the supply is applied, the output switches ON after time <em>t</em> and stays on until the supply is removed.</td></tr>
+      <tr><td><strong>Ec</strong></td><td>On-delay with control</td><td>Supply permanent. Closing <code>B1</code> starts <em>t</em>; the output switches ON after <em>t</em> and is held while <code>B1</code> stays closed.</td></tr>
+      <tr><td><strong>R</strong></td><td>Off-delay with control</td><td>Supply permanent. Closing <code>B1</code> switches the output ON immediately. When <code>B1</code> opens, the output stays ON for <em>t</em>, then switches OFF.</td></tr>
+      <tr><td><strong>Wu</strong></td><td>Interval (on power-up)</td><td>When the supply is applied, the output switches ON immediately for <em>t</em>, then OFF — and stays off until the supply is removed and reapplied.</td></tr>
+      <tr><td><strong>Ws</strong></td><td>Impulse (control close)</td><td>Supply permanent. Closing <code>B1</code> gives one ON pulse of length <em>t</em>. A further pulse needs <code>B1</code> to reopen and close again.</td></tr>
+      <tr><td><strong>Wa</strong></td><td>Impulse (control open)</td><td>Supply permanent. Opening <code>B1</code> gives one ON pulse of length <em>t</em>.</td></tr>
+      <tr><td><strong>Bp</strong></td><td>Flasher (pause first)</td><td>When the supply is applied, the output flashes evenly (<em>t</em> off, <em>t</em> on, repeating) until the supply is removed.</td></tr>
+    </table>
+
+    <h2>Worked example: staircase light that turns itself off</h2>
+    <ol>
+      <li>Choose function <strong>Wu</strong> (interval) and a time of, say, 10&nbsp;s.</li>
+      <li>Wire the supply: <code>L</code> → <code>A1</code>, <code>N</code> → <code>A2</code>.</li>
+      <li>Wire the lamp through the output: <code>L</code> → <code>15</code>, <code>18</code> → lamp <code>L</code>, lamp <code>N</code> → <code>N</code>.</li>
+      <li>Feed the supply through a push button so power is applied on press: the lamp comes on and switches off automatically after 10&nbsp;s.</li>
+    </ol>
+    <p>
+      Swap the function to <strong>E</strong> for an on-delay, or <strong>Bp</strong> to make a
+      lamp flash. For a run-on (pump keeps going after a stop signal) use <strong>R</strong>
+      with a control switch on <code>B1</code>.
+    </p>
+
+    <a class="cta" href="/">Build it in the simulator →</a>
+
+    <div class="related">
+      <strong>Related guides</strong>
+      <ul>
+        <li><a href="/guides/relay-no-nc-contacts.html">Relay NO vs NC contacts explained</a></li>
+        <li><a href="/guides/two-way-switch-wiring.html">How to wire a two-way switch</a></li>
+        <li><a href="/guides/intermediate-cross-switch-wiring.html">Control a light from three or more places</a></li>
+      </ul>
+    </div>
+
+    <div class="disclaimer">
+      <strong>For learning purposes only.</strong> This guide and simulator must not be relied
+      on for actual live installations. Always consult a qualified electrician and follow local
+      regulations.
+    </div>
+
+    <footer>Author: Harri Avellan · <a href="/" style="color:#8595a4">Home</a></footer>
+  </div>
+</body>
+</html>

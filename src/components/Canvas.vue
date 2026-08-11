@@ -45,6 +45,7 @@
           @toggle="(switchIndex: number | undefined) => handleToggle(element.id, switchIndex)"
           @button-press="(id: string, color: 'green' | 'red') => setButtonPressed(id, color, true)"
           @button-release="(id: string, color: 'green' | 'red') => setButtonPressed(id, color, false)"
+          @configure="onConfigureTimer"
           @delete="removeElement(element.id)"
         />
       </g>
@@ -167,6 +168,43 @@
     <div class="canvas-help">
       Scroll to zoom • Middle-click to pan • R to rotate • Del to delete • Drag to select multiple
     </div>
+
+    <!-- Multifunction timer settings popup -->
+    <div v-if="configTimer" class="timer-config-overlay" @click.self="configTimerId = null">
+      <div class="timer-config-dialog">
+        <div class="tc-header">
+          <span>Timer settings</span>
+          <button class="tc-close" aria-label="Close" @click="configTimerId = null">✕</button>
+        </div>
+
+        <div class="tc-label">Function</div>
+        <div class="tc-functions">
+          <button
+            v-for="f in TIMER_FUNCTIONS"
+            :key="f.code"
+            type="button"
+            :class="{ active: (configTimer.state.timerFunction || 'E') === f.code }"
+            @click="setTimerConfig(configTimerId!, { timerFunction: f.code })"
+          >
+            <b>{{ f.code }}</b><span>{{ f.name }}</span>
+          </button>
+        </div>
+
+        <p class="tc-desc">{{ activeTimerFnDesc }}</p>
+
+        <div class="tc-label">Time delay: <strong>{{ timerDurationLabel }}</strong></div>
+        <input
+          class="tc-slider"
+          type="range"
+          min="0.1"
+          max="60"
+          step="0.1"
+          :value="configTimer.state.timerDuration ?? 1"
+          @input="onTimerDurationInput"
+        />
+        <div class="tc-range-ends"><span>0.1 s</span><span>60 s</span></div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -187,6 +225,7 @@ import Switch7 from './elements/Switch7.vue'
 import Cable from './wiring/Cable.vue'
 import Relay from './elements/Relay.vue'
 import PushButton from './elements/PushButton.vue'
+import MultiTimer from './elements/MultiTimer.vue'
 import JunctionBox from './elements/JunctionBox.vue'
 import DistributionBoard from './elements/DistributionBoard.vue'
 
@@ -236,6 +275,40 @@ const isTouchInput = ref(false)
 // Cable selected for deletion on touch (tap-to-select instead of tap-to-remove).
 const selectedCableId = ref<string | null>(null)
 
+// Multifunction timer configuration popup.
+const configTimerId = ref<string | null>(null)
+const TIMER_FUNCTIONS = [
+  { code: 'E', name: 'On-delay', desc: 'On supply, output switches ON after t and stays until supply is removed.' },
+  { code: 'Ec', name: 'On-delay (control)', desc: 'Supply permanent. Closing B1 starts t; output ON after t, held while B1 closed.' },
+  { code: 'R', name: 'Off-delay (control)', desc: 'Supply permanent. B1 closed → output ON. On B1 open, output stays ON for t, then OFF.' },
+  { code: 'Wu', name: 'Interval (power-up)', desc: 'On supply, output goes ON immediately for t, then OFF until supply is removed.' },
+  { code: 'Ws', name: 'Impulse (B1 close)', desc: 'Supply permanent. Closing B1 gives an ON pulse of length t (re-triggers after B1 reopens).' },
+  { code: 'Wa', name: 'Impulse (B1 open)', desc: 'Supply permanent. Opening B1 gives an ON pulse of length t.' },
+  { code: 'Bp', name: 'Flasher (pause first)', desc: 'On supply, output flashes 1:1 (t OFF, t ON, …) until supply is removed.' }
+]
+
+const onConfigureTimer = (elementId: string): void => {
+  configTimerId.value = elementId
+}
+
+const configTimer = computed(() => state.elements.find(e => e.id === configTimerId.value) || null)
+
+const onTimerDurationInput = (event: Event): void => {
+  if (!configTimerId.value) return
+  const value = parseFloat((event.target as HTMLInputElement).value)
+  setTimerConfig(configTimerId.value, { timerDuration: value })
+}
+
+const timerDurationLabel = computed(() => {
+  const d = configTimer.value?.state.timerDuration ?? 1
+  return d < 10 ? `${d.toFixed(1)} s` : `${Math.round(d)} s`
+})
+
+const activeTimerFnDesc = computed(() => {
+  const code = configTimer.value?.state.timerFunction || 'E'
+  return TIMER_FUNCTIONS.find(f => f.code === code)?.desc || ''
+})
+
 // Rectangular selection state
 const isSelecting = ref(false)
 const selectionStart = ref<Point>({ x: 0, y: 0 })
@@ -271,6 +344,7 @@ const {
   updateElement,
   toggleSwitch,
   setButtonPressed,
+  setTimerConfig,
   rotateElement,
   startWiring,
   addControlPoint,
@@ -332,6 +406,7 @@ const componentMap: Record<string, Component> = {
   'relay-no-nc': Relay,
   'relay-nc-nc': Relay,
   'button': PushButton,
+  'timer': MultiTimer,
   'junction-box': JunctionBox,
   'distribution-board': DistributionBoard
 }
@@ -477,7 +552,7 @@ const onMouseDown = (event: MouseEvent): void => {
   // Left mouse button on empty canvas - start selection rectangle
   if (event.button === 0 && !wiringMode.value) {
     const target = event.target as HTMLElement
-    const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .push-button, .junction-box, .distribution-board')
+    const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .push-button, .timer, .junction-box, .distribution-board')
 
     if (!clickedOnElement && !target.closest('.terminal')) {
       const pos = getSvgPoint(event.clientX, event.clientY)
@@ -809,10 +884,12 @@ const RELAY_HEIGHT = 90
 const DIN_RAIL_SNAP_DISTANCE = 30 // How close to snap to DIN rail
 const DIN_RAIL_HEIGHT = 12
 
-// Check if element mounts on a DIN rail (relays and push-button modules)
+// Check if element mounts on a DIN rail (relays, push-button and timer modules)
 const isDinMountable = (type: string): boolean => {
-  return type.startsWith('relay-') || type === 'button'
+  return type.startsWith('relay-') || type === 'button' || type === 'timer'
 }
+
+const moduleWidth = (type: string): number => (type === 'timer' ? 44 : RELAY_WIDTH)
 
 // Find the closest DIN rail in any distribution board to a given position
 const findClosestDinRail = (x: number, y: number, elementWidth: number): { boardId: string; railId: string; railY: number; boardX: number; boardY: number } | null => {
@@ -872,7 +949,7 @@ const findClosestDinRail = (x: number, y: number, elementWidth: number): { board
 const { startDrag } = useDrag(getSvgPoint, (element: Element, newX: number, newY: number, _isDone: boolean) => {
   // DIN rail snapping for relays
   if (isDinMountable(element.type)) {
-    const closestRail = findClosestDinRail(newX, newY, RELAY_WIDTH)
+    const closestRail = findClosestDinRail(newX, newY, moduleWidth(element.type))
 
     if (closestRail) {
       // Snap to DIN rail - position relay so its bottom sits on the rail
@@ -880,7 +957,7 @@ const { startDrag } = useDrag(getSvgPoint, (element: Element, newX: number, newY
 
       // Constrain X within the distribution board bounds
       const minX = closestRail.boardX + 15
-      const maxX = closestRail.boardX + 400 - RELAY_WIDTH - 15
+      const maxX = closestRail.boardX + 400 - moduleWidth(element.type) - 15
       const snappedX = Math.max(minX, Math.min(maxX, newX))
 
       updateElement(element.id, {
@@ -916,7 +993,7 @@ const { startDrag } = useDrag(getSvgPoint, (element: Element, newX: number, newY
 const onElementMouseDown = (event: MouseEvent, element: Element): void => {
   // Don't start drag if we clicked on a terminal or toggle area or delete button
   const target = event.target as HTMLElement
-  if (target.closest('.terminal') || target.closest('.toggle-area') || target.closest('.press-btn') || target.closest('.delete-btn')) {
+  if (target.closest('.terminal') || target.closest('.toggle-area') || target.closest('.press-btn') || target.closest('.timer-config') || target.closest('.delete-btn')) {
     return
   }
 
@@ -969,7 +1046,7 @@ const onElementTouchStart = (event: TouchEvent, element: Element): void => {
   if (event.touches.length !== 1) return
   const target = event.target as HTMLElement
   // Let terminals / toggles / buttons / delete handle their own taps.
-  if (target.closest('.terminal') || target.closest('.toggle-area') || target.closest('.press-btn') || target.closest('.delete-btn')) {
+  if (target.closest('.terminal') || target.closest('.toggle-area') || target.closest('.press-btn') || target.closest('.timer-config') || target.closest('.delete-btn')) {
     return
   }
   if (wiringMode.value) return
@@ -1154,7 +1231,7 @@ const onCanvasClick = (event: MouseEvent): void => {
   const target = event.target as HTMLElement
 
   // Check if clicked on an element (not empty canvas)
-  const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .push-button, .junction-box, .distribution-board')
+  const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .push-button, .timer, .junction-box, .distribution-board')
 
   // Handle tap-to-place component (for touch devices)
   if (props.selectedComponent && !clickedOnElement && !target.closest('.terminal')) {
@@ -1361,5 +1438,104 @@ onUnmounted(() => {
 
 .element-actions button:last-child {
   background: #f44336;
+}
+
+.timer-config-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1600;
+  padding: 16px;
+}
+
+.timer-config-dialog {
+  background: #fff;
+  border-radius: 8px;
+  width: 340px;
+  max-width: 100%;
+  padding: 16px 18px 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.tc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a2733;
+  margin-bottom: 12px;
+}
+
+.tc-close {
+  border: none;
+  background: #eef2f6;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #333;
+}
+
+.tc-label {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 10px 0 6px;
+}
+
+.tc-functions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.tc-functions button {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid #d8e0ea;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #333;
+  text-align: left;
+}
+
+.tc-functions button b {
+  color: #1976d2;
+  font-size: 13px;
+  min-width: 20px;
+}
+
+.tc-functions button.active {
+  border-color: #1976d2;
+  background: #e3f2fd;
+}
+
+.tc-desc {
+  font-size: 12px;
+  color: #5a6b7a;
+  line-height: 1.45;
+  margin: 8px 0 4px;
+  min-height: 34px;
+}
+
+.tc-slider {
+  width: 100%;
+  accent-color: #1976d2;
+}
+
+.tc-range-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #999;
 }
 </style>

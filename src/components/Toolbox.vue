@@ -172,6 +172,26 @@
     </div>
 
     <div class="section">
+      <h4>Timers</h4>
+      <div class="tool-item" :class="{ selected: selectedComponent === 'timer' }" draggable="true" @dragstart="onDragStart($event, 'timer')" @click="onComponentTap('timer')">
+        <svg width="45" height="50" viewBox="0 0 60 90">
+          <rect x="10" y="5" width="40" height="80" rx="3" fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+          <rect x="14" y="24" width="32" height="42" rx="2" fill="#fff" stroke="#cfd8e3" stroke-width="1"/>
+          <circle cx="22" cy="33" r="3" fill="#4caf50"/>
+          <circle cx="38" cy="33" r="3" fill="#ffca28"/>
+          <text x="30" y="52" text-anchor="middle" font-size="14" font-weight="bold" fill="#1a2733">t</text>
+          <circle cx="19" cy="9" r="2.5" fill="#fff" stroke="#8B4513" stroke-width="1.2"/>
+          <circle cx="30" cy="9" r="2.5" fill="#fff" stroke="#ff9800" stroke-width="1.2"/>
+          <circle cx="41" cy="9" r="2.5" fill="#fff" stroke="#333" stroke-width="1.2"/>
+          <circle cx="19" cy="81" r="2.5" fill="#fff" stroke="#1976d2" stroke-width="1.2"/>
+          <circle cx="30" cy="81" r="2.5" fill="#fff" stroke="#333" stroke-width="1.2"/>
+          <circle cx="41" cy="81" r="2.5" fill="#fff" stroke="#333" stroke-width="1.2"/>
+        </svg>
+        <span>Multifunction Timer</span>
+      </div>
+    </div>
+
+    <div class="section">
       <h4>Enclosures</h4>
       <div class="tool-item" :class="{ selected: selectedComponent === 'junction-box' }" draggable="true" @dragstart="onDragStart($event, 'junction-box')" @click="onComponentTap('junction-box')">
         <svg width="50" height="50" viewBox="0 0 100 100">
