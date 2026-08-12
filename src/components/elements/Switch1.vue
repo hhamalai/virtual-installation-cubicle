@@ -25,7 +25,7 @@
     </text>
 
     <!-- Type label (counter-rotated) -->
-    <text x="30" y="-3" text-anchor="middle" font-size="9" fill="#999"
+    <text class="part-label" x="30" y="-3" text-anchor="middle" font-size="9" fill="#999"
           :transform="`rotate(${-rotation}, 30, -3)`">1</text>
 
     <!-- Click area for toggling -->

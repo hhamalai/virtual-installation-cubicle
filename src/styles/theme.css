@@ -1,0 +1,106 @@
+/* Theme tokens. `data-theme` is set on <html> by the inline script in index.html
+   (before first paint) and kept in sync by src/composables/useTheme.ts. */
+:root {
+  color-scheme: light;
+
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f8f9fa;
+  --surface-3: #f0f0f0;
+  --surface-sunken: #eef2f6;
+
+  --border: #dddddd;
+  --border-soft: #e3e8ee;
+
+  --text: #333333;
+  --text-muted: #666666;
+  --text-faint: #999999;
+
+  --accent: #1976d2;
+  --accent-strong: #1565c0;
+  --accent-soft: #e3f2fd;
+  --accent-border: #cfd8e3;
+  --accent-text: #10466f;
+
+  --danger: #dc3545;
+  --danger-strong: #d32f2f;
+
+  --canvas-bg: #fafafa;
+  --grid-line: #e0e0e0;
+  --grid-line-strong: #cccccc;
+
+  --overlay: rgba(0, 0, 0, 0.5);
+  --shadow: rgba(0, 0, 0, 0.15);
+  --shadow-strong: rgba(0, 0, 0, 0.3);
+
+  --warn-bg: #fff3e0;
+  --warn-text: #e65100;
+  --error-bg: #fdecea;
+  --error-border: #f5c6c2;
+  --error-text: #a32b20;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #12161b;
+  --surface: #1b2027;
+  --surface-2: #171c22;
+  --surface-3: #232a33;
+  --surface-sunken: #232a33;
+
+  --border: #2d3742;
+  --border-soft: #2d3742;
+
+  --text: #e4e8ed;
+  --text-muted: #a4b0bd;
+  --text-faint: #8b98a5;
+
+  --accent: #64b5f6;
+  --accent-strong: #90caf9;
+  --accent-soft: rgba(100, 181, 246, 0.16);
+  --accent-border: #3c4a5a;
+  --accent-text: #bbdefb;
+
+  --danger: #ef5350;
+  --danger-strong: #e57373;
+
+  --canvas-bg: #1a1f26;
+  --grid-line: #242b34;
+  --grid-line-strong: #2f3944;
+
+  --overlay: rgba(0, 0, 0, 0.65);
+  --shadow: rgba(0, 0, 0, 0.5);
+  --shadow-strong: rgba(0, 0, 0, 0.6);
+
+  --warn-bg: #3a2a12;
+  --warn-text: #ffb74d;
+  --error-bg: #3a1e1c;
+  --error-border: #5b2b27;
+  --error-text: #ff8a80;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Components keep their real-world look (light enclosures) on the dark canvas,
+   but the labels drawn outside an enclosure sit on the canvas itself. */
+[data-theme='dark'] .part-label {
+  fill: var(--text-faint);
+}
+
+/* Toolbox previews are line drawings in near-black; give them a light chip so
+   they stay legible on the dark panel, matching how parts look on the canvas. */
+[data-theme='dark'] .tool-item svg {
+  background: #dfe3e6;
+  border-radius: 3px;
+}
+
+/* Parts keep their light enclosures, but at full brightness they glare against
+   the dark canvas; blending them slightly into it settles them down. Opacity
+   rather than a filter, which would clip hover controls to the filter region. */
+[data-theme='dark'] .element-layer {
+  opacity: 0.85;
+}

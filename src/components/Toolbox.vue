@@ -416,8 +416,8 @@ defineExpose({
 <style scoped>
 .toolbox {
   width: 200px;
-  background: #f8f9fa;
-  border-right: 1px solid #ddd;
+  background: var(--surface-2);
+  border-right: 1px solid var(--border);
   padding: 15px;
   overflow-y: auto;
   height: 100vh;
@@ -438,14 +438,14 @@ defineExpose({
     left: 0;
     height: calc(100% - 47px);
     z-index: 500;
-    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.25);
+    box-shadow: 2px 0 12px var(--shadow-strong);
   }
 }
 
 h3 {
   margin: 0 0 15px 0;
   font-size: 16px;
-  color: #333;
+  color: var(--text);
 }
 
 .section {
@@ -455,7 +455,7 @@ h3 {
 h4 {
   margin: 0 0 10px 0;
   font-size: 12px;
-  color: #666;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -463,7 +463,7 @@ h4 {
 .section-hint {
   margin: 0 0 8px 0;
   font-size: 10px;
-  color: #999;
+  color: var(--text-faint);
   font-style: italic;
 }
 
@@ -472,8 +472,8 @@ h4 {
   align-items: center;
   gap: 10px;
   padding: 8px;
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 4px;
   margin-bottom: 8px;
   cursor: grab;
@@ -481,8 +481,8 @@ h4 {
 }
 
 .tool-item:hover {
-  border-color: #1976d2;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-color: var(--accent);
+  box-shadow: 0 2px 4px var(--shadow);
 }
 
 .tool-item:active {
@@ -491,7 +491,7 @@ h4 {
 
 .tool-item span {
   font-size: 12px;
-  color: #333;
+  color: var(--text);
 }
 
 .cable-type {
@@ -499,8 +499,8 @@ h4 {
 }
 
 .cable-type.selected {
-  border-color: #1976d2;
-  background: #e3f2fd;
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .cable-preview {
@@ -517,14 +517,14 @@ h4 {
 .cable-info {
   margin-top: 15px;
   padding: 10px;
-  background: #fff3e0;
+  background: var(--warn-bg);
   border-radius: 4px;
   font-size: 12px;
 }
 
 .cable-info p {
   margin: 0 0 8px 0;
-  color: #e65100;
+  color: var(--warn-text);
 }
 
 .cable-info button {
@@ -544,33 +544,33 @@ h4 {
 .component-info {
   margin-bottom: 15px;
   padding: 10px;
-  background: #e3f2fd;
+  background: var(--accent-soft);
   border-radius: 4px;
   font-size: 12px;
 }
 
 .component-info p {
   margin: 0 0 8px 0;
-  color: #1565c0;
+  color: var(--accent-text);
 }
 
 .component-info button {
   padding: 4px 12px;
   border: none;
-  background: #1976d2;
-  color: white;
+  background: var(--accent);
+  color: var(--surface);
   border-radius: 3px;
   cursor: pointer;
   font-size: 12px;
 }
 
 .component-info button:hover {
-  background: #1565c0;
+  background: var(--accent-strong);
 }
 
 .tool-item.selected {
-  border-color: #1976d2;
-  background: #e3f2fd;
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .wire-colors {
@@ -583,7 +583,7 @@ h4 {
   width: 26px;
   height: 26px;
   border-radius: 4px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   padding: 0;
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.1s;
@@ -594,8 +594,8 @@ h4 {
 }
 
 .swatch.selected {
-  border: 2px solid #1976d2;
-  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.3);
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
 .swatch-custom {

@@ -66,7 +66,36 @@
     .related a{color:#1976d2}
     footer{margin-top:30px;font-size:13px;color:#8595a4}
     code{background:#eef2f6;padding:1px 6px;border-radius:4px;font-size:14px}
+  
+    /* Dark theme: set by the inline script below from the app's saved choice,
+       falling back to the OS preference. */
+    html[data-theme='dark'] body{background:#12161b;color:#c9d1d9}
+    html[data-theme='dark'] h1,html[data-theme='dark'] h2,html[data-theme='dark'] h3,html[data-theme='dark'] .card h2{color:#e4e8ed}
+    html[data-theme='dark'] p,html[data-theme='dark'] li,html[data-theme='dark'] .lead,html[data-theme='dark'] .card p{color:#b6c0cb}
+    html[data-theme='dark'] a,html[data-theme='dark'] .crumbs a,html[data-theme='dark'] .related a{color:#64b5f6}
+    html[data-theme='dark'] .crumbs,html[data-theme='dark'] footer,html[data-theme='dark'] footer a{color:#8b98a5}
+    html[data-theme='dark'] .cta{background:#1565c0;color:#fff}
+    html[data-theme='dark'] .card,html[data-theme='dark'] .terminals{background:#1b2027;border-color:#2d3742}
+    html[data-theme='dark'] .card:hover{border-color:#64b5f6}
+    html[data-theme='dark'] .related{border-color:#2d3742}
+    html[data-theme='dark'] .disclaimer{background:#2b2313;border-color:#f0ad4e;color:#d9c8a4}
+    html[data-theme='dark'] code{background:#232a33;color:#d7dee6}
+    html[data-theme='dark'] th,html[data-theme='dark'] td{border-color:#2d3742}
+    html[data-theme='dark'] th{background:#1b2027}
   </style>
+
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('electric-theme')
+        var dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+      } catch (e) {
+        document.documentElement.dataset.theme = 'light'
+      }
+    })()
+  </script>
+
 </head>
 <body>
   <div class="wrap">
@@ -110,7 +139,7 @@
       path breaks. That is exactly how stairway lighting works.
     </p>
 
-    <a class="cta" href="/">Try it in the simulator →</a>
+    <a class="cta" href="/?sample=two-way-switch">Open this circuit in the simulator →</a>
 
     <div class="related">
       <strong>Related guides</strong>

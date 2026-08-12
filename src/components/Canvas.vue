@@ -4,7 +4,7 @@
       <button @click="zoomIn">+</button>
       <span>{{ Math.round(zoom * 100) }}%</span>
       <button @click="zoomOut">−</button>
-      <button @click="resetView">Reset</button>
+      <button class="zoom-reset" @click="resetView">Reset</button>
     </div>
     <svg
       ref="svgRef"
@@ -23,17 +23,17 @@
       <!-- Grid pattern -->
       <defs>
         <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e0e0e0" stroke-width="0.5"/>
+          <path class="grid-line" d="M 20 0 L 0 0 0 20" fill="none" stroke-width="0.5"/>
         </pattern>
         <pattern id="grid-large" width="100" height="100" patternUnits="userSpaceOnUse">
-          <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#ccc" stroke-width="0.5"/>
+          <path class="grid-line-strong" d="M 100 0 L 0 0 0 100" fill="none" stroke-width="0.5"/>
         </pattern>
       </defs>
       <rect x="-5000" y="-5000" width="10000" height="10000" fill="url(#grid)"/>
       <rect x="-5000" y="-5000" width="10000" height="10000" fill="url(#grid-large)"/>
 
       <!-- Elements (rendered first, so wires appear on top) -->
-      <g v-for="element in elements" :key="element.id">
+      <g v-for="element in elements" :key="element.id" class="element-layer">
         <component
           :is="getComponentType(element.type)"
           :element="element"
@@ -72,7 +72,7 @@
           :cy="dot.y"
           r="3.5"
           fill="#ff5722"
-          stroke="#fff"
+          stroke="var(--canvas-bg)"
           stroke-width="1.5"
         />
       </g>
@@ -91,13 +91,13 @@
         <path
           v-if="pendingWirePath"
           :d="pendingWirePath"
-          :stroke="pendingWire.color"
+          :stroke="displayWireColor(pendingWire.color)"
           stroke-width="2"
           fill="none"
         />
         <!-- Control points -->
         <circle
-          v-for="(point, i) in pendingWire.controlPoints"
+          v-for="(point, i) in pendingControlPoints"
           :key="i"
           :cx="point.x"
           :cy="point.y"
@@ -115,7 +115,7 @@
           :y1="pendingCableWire.startPos.y"
           :x2="mousePos.x"
           :y2="mousePos.y"
-          :stroke="pendingCableWire.color"
+          :stroke="displayWireColor(pendingCableWire.color)"
           stroke-width="3"
           stroke-dasharray="8,4"
         />
@@ -123,7 +123,7 @@
           :cx="pendingCableWire.startPos.x"
           :cy="pendingCableWire.startPos.y"
           r="6"
-          :fill="pendingCableWire.color"
+          :fill="displayWireColor(pendingCableWire.color)"
           stroke="#fff"
           stroke-width="2"
         />
@@ -213,6 +213,7 @@ import { ref, computed, watch, onMounted, onUnmounted, provide, type Component }
 import { useCircuitStore } from '../stores/circuit'
 import { useConnections } from '../composables/useConnections'
 import { useDrag } from '../composables/useDrag'
+import { displayWireColor } from '../composables/useTheme'
 import type { Element, Point } from '../types'
 
 import PowerInput from './elements/PowerInput.vue'
@@ -244,7 +245,6 @@ interface PendingWire {
   elementId: string
   terminalId: string
   color: string
-  controlPoints: Point[]
   // Optional: if starting from a specific wire in a multi-wire cable
   connectedCableId?: string
   connectedWireIndex?: number
@@ -339,6 +339,7 @@ const pendingCableWire = ref<PendingCableWire | null>(null)
 
 const {
   state,
+  workspace,
   addElement,
   removeElement,
   updateElement,
@@ -364,6 +365,8 @@ provide('isTouchInput', isTouchInput)
 const elements = computed(() => state.elements)
 const cables = computed(() => state.cables)
 const wiringMode = computed(() => state.wiringMode)
+// The wire being drawn owns its points in the store; the preview only reads them.
+const pendingControlPoints = computed<Point[]>(() => state.wiringMode?.controlPoints || [])
 
 // While a wire is being drawn, existing cables must be click-through so a click
 // meant to add a control point can't accidentally remove a wire it lands on.
@@ -391,6 +394,18 @@ watch(wiringMode, (newValue) => {
   if (!newValue) {
     pendingWire.value = null
   }
+})
+
+// Selections and the view belong to the circuit that was on screen; a different
+// tab holds different elements, so start it clean at the default view.
+watch(() => workspace.activeId, () => {
+  selectedElementId.value = null
+  selectedElementIds.value.clear()
+  selectedCableId.value = null
+  pendingWire.value = null
+  pendingCableWire.value = null
+  configTimerId.value = null
+  resetView()
 })
 
 const componentMap: Record<string, Component> = {
@@ -500,6 +515,14 @@ const getSvgPoint = (clientX: number, clientY: number): Point => {
   return { x: svgPt.x, y: svgPt.y }
 }
 
+// A tap also emits mousedown/mouseup/click a moment later. Those synthesized
+// events must not re-run canvas handling: doing so added a second control point
+// on top of the first, and two coincident points render as a loop in the wire.
+const lastTouchEndAt = ref(0)
+const SYNTHESIZED_MOUSE_WINDOW_MS = 800
+const isSynthesizedMouseEvent = (): boolean =>
+  Date.now() - lastTouchEndAt.value < SYNTHESIZED_MOUSE_WINDOW_MS
+
 const onMouseMove = (event: MouseEvent): void => {
   const pos = getSvgPoint(event.clientX, event.clientY)
   mousePos.value = pos
@@ -539,6 +562,7 @@ const onMouseMove = (event: MouseEvent): void => {
 }
 
 const onMouseDown = (event: MouseEvent): void => {
+  if (isSynthesizedMouseEvent()) return
   isTouchInput.value = false
 
   // Middle mouse button for panning
@@ -706,6 +730,7 @@ const onTouchMove = (event: TouchEvent): void => {
 }
 
 const onTouchEnd = (event: TouchEvent): void => {
+  lastTouchEndAt.value = Date.now()
   const wasPinch = pinchStartDistance.value !== null
   const moved = isTouchDragging.value
 
@@ -730,7 +755,6 @@ const onTouchEnd = (event: TouchEvent): void => {
           onTerminalClick(near.elementId, near.terminalId)
         } else if (!moved) {
           addControlPoint(pos.x, pos.y)
-          if (pendingWire.value) pendingWire.value.controlPoints.push({ x: pos.x, y: pos.y })
         }
       } else if (!moved) {
         const near = nearestTerminal(pos, touchSnapRadius())
@@ -848,7 +872,7 @@ const pendingWirePath = computed(() => {
   }
   if (!fromPos) return ''
 
-  const points = [fromPos, ...pendingWire.value.controlPoints, mousePos.value]
+  const points = [fromPos, ...pendingControlPoints.value, mousePos.value]
 
   if (points.length < 2) return ''
 
@@ -1101,8 +1125,7 @@ const onTerminalClick = (elementId: string, terminalId: string): void => {
     pendingWire.value = {
       elementId,
       terminalId,
-      color: wireColor,
-      controlPoints: []
+      color: wireColor
     }
 
     // Initialize mouse position to terminal position
@@ -1176,7 +1199,6 @@ const onWireTerminalClick = (data: { cableId: string; wireIndex: number; end: 'f
       elementId: data.elementId,
       terminalId: data.terminalId,
       color: wireColor,
-      controlPoints: [],
       connectedCableId: data.cableId,
       connectedWireIndex: data.wireIndex,
       localX: data.localX,
@@ -1226,7 +1248,7 @@ const onUpdateWirePoint = ({ wire, index, clientX, clientY }: WirePointUpdate): 
 
 const onCanvasClick = (event: MouseEvent): void => {
   // Touch taps are fully handled in onTouchEnd; ignore the synthesized click.
-  if (isTouchInput.value) return
+  if (isTouchInput.value || isSynthesizedMouseEvent()) return
 
   const target = event.target as HTMLElement
 
@@ -1248,10 +1270,6 @@ const onCanvasClick = (event: MouseEvent): void => {
 
     const pos = getSvgPoint(event.clientX, event.clientY)
     addControlPoint(pos.x, pos.y)
-
-    if (pendingWire.value) {
-      pendingWire.value.controlPoints.push({ x: pos.x, y: pos.y })
-    }
   } else if (!clickedOnElement) {
     // Deselect only when clicking empty canvas (but not after selection rectangle)
     if (!isSelecting.value) {
@@ -1321,8 +1339,16 @@ onUnmounted(() => {
 .canvas {
   width: 100%;
   height: 100%;
-  background: #fafafa;
+  background: var(--canvas-bg);
   cursor: crosshair;
+}
+
+.grid-line {
+  stroke: var(--grid-line);
+}
+
+.grid-line-strong {
+  stroke: var(--grid-line-strong);
 }
 
 .canvas-container:active .canvas {
@@ -1336,18 +1362,19 @@ onUnmounted(() => {
   display: flex;
   gap: 5px;
   align-items: center;
-  background: white;
+  background: var(--surface);
   padding: 5px 10px;
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px var(--shadow);
   z-index: 10;
 }
 
 .zoom-controls button {
   width: 28px;
   height: 28px;
-  border: 1px solid #ddd;
-  background: white;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   border-radius: 4px;
   cursor: pointer;
   font-size: 16px;
@@ -1357,13 +1384,21 @@ onUnmounted(() => {
 }
 
 .zoom-controls button:hover {
-  background: #f0f0f0;
+  background: var(--surface-3);
+}
+
+/* Text label, not an icon: size it to the word instead of the 28px square. */
+.zoom-controls .zoom-reset {
+  width: auto;
+  padding: 0 10px;
+  font-size: 12px;
 }
 
 .zoom-controls span {
   font-size: 12px;
   min-width: 45px;
   text-align: center;
+  color: var(--text);
 }
 
 .canvas-help {
@@ -1372,8 +1407,8 @@ onUnmounted(() => {
   left: 50%;
   transform: translateX(-50%);
   font-size: 11px;
-  color: #888;
-  background: rgba(255,255,255,0.9);
+  color: var(--text-faint);
+  background: var(--surface);
   padding: 4px 12px;
   border-radius: 4px;
 }
@@ -1401,17 +1436,17 @@ onUnmounted(() => {
   padding: 8px 16px;
   border: none;
   border-radius: 20px;
-  background: #f44336;
-  color: white;
+  background: var(--danger);
+  color: #fff;
   font-size: 14px;
   font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px var(--shadow-strong);
   cursor: pointer;
   z-index: 20;
 }
 
 .cancel-wire-fab:hover {
-  background: #d32f2f;
+  background: var(--danger-strong);
 }
 
 .element-actions {
@@ -1428,22 +1463,23 @@ onUnmounted(() => {
   padding: 10px 16px;
   border: none;
   border-radius: 20px;
-  background: #1976d2;
-  color: white;
+  background: var(--accent);
+  color: var(--surface);
   font-size: 14px;
   font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px var(--shadow-strong);
   cursor: pointer;
 }
 
 .element-actions button:last-child {
-  background: #f44336;
+  background: var(--danger);
+  color: #fff;
 }
 
 .timer-config-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1452,12 +1488,12 @@ onUnmounted(() => {
 }
 
 .timer-config-dialog {
-  background: #fff;
+  background: var(--surface);
   border-radius: 8px;
   width: 340px;
   max-width: 100%;
   padding: 16px 18px 20px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 40px var(--shadow-strong);
 }
 
 .tc-header {
@@ -1466,23 +1502,23 @@ onUnmounted(() => {
   justify-content: space-between;
   font-size: 15px;
   font-weight: 600;
-  color: #1a2733;
+  color: var(--text);
   margin-bottom: 12px;
 }
 
 .tc-close {
   border: none;
-  background: #eef2f6;
+  background: var(--surface-sunken);
   width: 26px;
   height: 26px;
   border-radius: 4px;
   cursor: pointer;
-  color: #333;
+  color: var(--text);
 }
 
 .tc-label {
   font-size: 12px;
-  color: #666;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
   margin: 10px 0 6px;
@@ -1499,29 +1535,29 @@ onUnmounted(() => {
   align-items: baseline;
   gap: 6px;
   padding: 6px 8px;
-  border: 1px solid #d8e0ea;
-  background: #fff;
+  border: 1px solid var(--border);
+  background: var(--surface);
   border-radius: 4px;
   cursor: pointer;
   font-size: 11px;
-  color: #333;
+  color: var(--text);
   text-align: left;
 }
 
 .tc-functions button b {
-  color: #1976d2;
+  color: var(--accent);
   font-size: 13px;
   min-width: 20px;
 }
 
 .tc-functions button.active {
-  border-color: #1976d2;
-  background: #e3f2fd;
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .tc-desc {
   font-size: 12px;
-  color: #5a6b7a;
+  color: var(--text-muted);
   line-height: 1.45;
   margin: 8px 0 4px;
   min-height: 34px;
@@ -1529,13 +1565,13 @@ onUnmounted(() => {
 
 .tc-slider {
   width: 100%;
-  accent-color: #1976d2;
+  accent-color: var(--accent);
 }
 
 .tc-range-ends {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  color: #999;
+  color: var(--text-faint);
 }
 </style>

@@ -10,7 +10,7 @@
     <rect x="-5" y="-15" width="80" height="40" rx="3" fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
 
     <!-- Label (counter-rotated) -->
-    <text x="35" y="-3" text-anchor="middle" font-size="10" fill="#666"
+    <text class="part-label" x="35" y="-3" text-anchor="middle" font-size="10" fill="#666"
           :transform="`rotate(${-rotation}, 35, -3)`">POWER</text>
 
     <!-- Terminals -->

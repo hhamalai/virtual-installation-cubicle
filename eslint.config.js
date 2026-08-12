@@ -35,7 +35,10 @@ export default [
         EventListener: 'readonly',
         // Built-in objects
         Map: 'readonly',
-        Set: 'readonly'
+        Set: 'readonly',
+        Blob: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly'
       }
     }
   },

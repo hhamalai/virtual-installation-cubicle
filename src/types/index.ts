@@ -156,6 +156,21 @@ export interface CircuitState {
   nextId: number
 }
 
+// One circuit, shown as one tab in the app.
+export interface CircuitDoc {
+  id: string
+  name: string
+  elements: Element[]
+  cables: Cable[]
+  drawnCables: DrawnCable[]
+  nextId: number
+}
+
+export interface Workspace {
+  activeId: string
+  docs: CircuitDoc[]
+}
+
 export interface CableDrawingMode {
   cableType: 'mmj3' | 'mmj5' | 'omm'
   path: Point[]

@@ -17,6 +17,7 @@
         </div>
         <iframe
           ref="frameRef"
+          :key="`${src}|${theme}`"
           :src="src"
           class="docs-frame"
           title="Documentation"
@@ -29,6 +30,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useTheme } from '../composables/useTheme'
+
+// Guides read the saved theme themselves; re-key the frame so an open guide
+// follows a theme change instead of staying on the old palette.
+const { theme } = useTheme()
 
 const props = defineProps<{
   open: boolean
@@ -38,7 +44,15 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
   navigate: [url: string]
+  'open-sample': [sampleId: string]
 }>()
+
+// Guides link their ready-made circuit as /?sample=<id> so the link also works on
+// the standalone page; inside the drawer it opens a simulator tab instead.
+const sampleIdFromHref = (href: string): string | null => {
+  const match = /^\/\?sample=([\w-]+)$/.exec(href)
+  return match ? match[1] : null
+}
 
 const guides = [
   { label: 'All guides', url: '/guides/index.html' },
@@ -64,7 +78,13 @@ const onFrameLoad = (): void => {
     doc.querySelectorAll('a').forEach((a) => {
       const href = a.getAttribute('href') || ''
       if (href.startsWith('/guides/') || href.startsWith('#')) return
-      if (href === '/') {
+      const sampleId = sampleIdFromHref(href)
+      if (sampleId) {
+        a.addEventListener('click', (e) => {
+          e.preventDefault()
+          emit('open-sample', sampleId)
+        })
+      } else if (href === '/') {
         a.addEventListener('click', (e) => {
           e.preventDefault()
           emit('close')
@@ -90,7 +110,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 .docs-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--overlay);
   z-index: 1500;
   display: flex;
   justify-content: flex-end;
@@ -99,8 +119,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 .docs-drawer {
   width: min(560px, 100vw);
   height: 100%;
-  background: #fff;
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.2);
+  background: var(--surface);
+  box-shadow: -4px 0 24px var(--shadow-strong);
   display: flex;
   flex-direction: column;
 }
@@ -110,8 +130,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border-bottom: 1px solid #e3e8ee;
-  background: #f8fafc;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--surface-2);
 }
 
 .docs-tabs {
@@ -123,9 +143,9 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 }
 
 .docs-tabs button {
-  border: 1px solid #d8e0ea;
-  background: #fff;
-  color: #1976d2;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--accent);
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 4px;
@@ -134,13 +154,13 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 }
 
 .docs-tabs button.active {
-  background: #1976d2;
-  color: #fff;
-  border-color: #1976d2;
+  background: var(--accent);
+  color: var(--surface);
+  border-color: var(--accent);
 }
 
 .docs-ext {
-  color: #5a6b7a;
+  color: var(--text-muted);
   text-decoration: none;
   font-size: 16px;
   padding: 2px 6px;
@@ -148,8 +168,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 
 .docs-close {
   border: none;
-  background: #eef2f6;
-  color: #333;
+  background: var(--surface-sunken);
+  color: var(--text);
   font-size: 14px;
   width: 28px;
   height: 28px;
@@ -159,7 +179,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 }
 
 .docs-close:hover {
-  background: #e0e6ec;
+  background: var(--surface-3);
 }
 
 .docs-frame {

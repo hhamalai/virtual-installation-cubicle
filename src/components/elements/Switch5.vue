@@ -10,7 +10,7 @@
     <rect x="-5" y="-10" width="75" height="85" rx="3" fill="#fafafa" stroke="#333" stroke-width="1"/>
 
     <!-- Type label (counter-rotated) -->
-    <text x="32" y="-13" text-anchor="middle" font-size="9" fill="#999"
+    <text class="part-label" x="32" y="-13" text-anchor="middle" font-size="9" fill="#999"
           :transform="`rotate(${-rotation}, 32, -13)`">5</text>
 
     <!-- First switch (top) -->

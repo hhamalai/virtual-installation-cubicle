@@ -69,15 +69,15 @@
             :cx="point.x"
             :cy="point.y"
             r="7"
-            fill="#fff"
-            stroke="#1976d2"
+            fill="var(--surface)"
+            stroke="var(--accent)"
             stroke-width="2"
           />
           <circle
             :cx="point.x"
             :cy="point.y"
             r="3"
-            fill="#1976d2"
+            fill="var(--accent)"
           />
         </g>
       </g>
@@ -94,6 +94,7 @@
 
 <script setup lang="ts">
 import { computed, ref, inject, type Ref } from 'vue'
+import { displayWireColor } from '../../composables/useTheme'
 import type { Cable as CableType, Wire as WireType, Point } from '../../types'
 
 interface WireEndpoints {
@@ -180,7 +181,7 @@ const cableInnerColor = computed((): string => {
     case 'omm':
       return '#9e9e9e'  // Gray core for OMM
     default:
-      return firstWire.value?.color || '#333'  // Use wire color for single
+      return displayWireColor(firstWire.value?.color || '#333')  // Use wire color for single
   }
 })
 

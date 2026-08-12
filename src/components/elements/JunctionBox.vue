@@ -10,7 +10,7 @@
     <rect x="0" y="0" :width="boxSize" :height="boxSize" rx="4" fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
 
     <!-- AP9 label -->
-    <text :x="boxSize / 2" y="-12" text-anchor="middle" font-size="11" fill="#666"
+    <text class="part-label" :x="boxSize / 2" y="-12" text-anchor="middle" font-size="11" fill="#666"
           :transform="`rotate(${-rotation}, ${boxSize / 2}, -12)`">AP9</text>
 
     <!-- Slot dividers - horizontal -->
@@ -115,7 +115,7 @@
           <!-- Position labels inside the box based on edge -->
           <text v-if="hovering && wireInfo.edge === 'top'" :y="12" text-anchor="middle" font-size="7" fill="#666"
                 :transform="`rotate(${-rotation}, 0, 12)`">{{ wireInfo.name }}</text>
-          <text v-if="hovering && wireInfo.edge === 'bottom'" :y="-8" text-anchor="middle" font-size="7" fill="#666"
+          <text class="part-label" v-if="hovering && wireInfo.edge === 'bottom'" :y="-8" text-anchor="middle" font-size="7" fill="#666"
                 :transform="`rotate(${-rotation}, 0, -8)`">{{ wireInfo.name }}</text>
           <text v-if="hovering && wireInfo.edge === 'left'" :x="12" :y="3" text-anchor="start" font-size="7" fill="#666"
                 :transform="`rotate(${-rotation}, 12, 3)`">{{ wireInfo.name }}</text>
