@@ -150,6 +150,22 @@
         </svg>
         <span>Relay NC-NC</span>
       </div>
+      <div class="tool-item" :class="{ selected: selectedComponent === 'step-relay' }" draggable="true" @dragstart="onDragStart($event, 'step-relay')" @click="onComponentTap('step-relay')">
+        <svg width="45" height="50" viewBox="0 0 60 90">
+          <!-- Coil -->
+          <rect x="22" y="36" width="16" height="18" rx="2" fill="none" stroke="#333" stroke-width="1.5"/>
+          <path d="M 26 42 Q 28 40, 30 42 Q 32 44, 34 42" fill="none" stroke="#333" stroke-width="1"/>
+          <path d="M 26 48 Q 28 46, 30 48 Q 32 50, 34 48" fill="none" stroke="#333" stroke-width="1"/>
+          <!-- Latching NO contact -->
+          <circle cx="12" cy="30" r="2.5" fill="#333"/>
+          <circle cx="12" cy="58" r="2.5" fill="#333"/>
+          <line x1="12" y1="58" x2="18" y2="34" stroke="#666" stroke-width="2"/>
+          <!-- Impulse arrows into the coil -->
+          <path d="M 44 40 L 52 40 M 48 36 L 52 40 L 48 44" fill="none" stroke="#1976d2" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M 44 50 L 52 50 M 48 46 L 52 50 L 48 54" fill="none" stroke="#1976d2" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span>Step Relay (impulse)</span>
+      </div>
     </div>
 
     <div class="section">
@@ -170,6 +186,18 @@
         </svg>
         <span>Start/Stop Button</span>
       </div>
+      <div class="tool-item" :class="{ selected: selectedComponent === 'button-no' }" draggable="true" @dragstart="onDragStart($event, 'button-no')" @click="onComponentTap('button-no')">
+        <svg width="45" height="50" viewBox="0 0 60 90">
+          <rect x="15" y="5" width="30" height="80" rx="3" fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+          <!-- terminals -->
+          <circle cx="30" cy="9" r="2.5" fill="#fff" stroke="#2e7d32" stroke-width="1.2"/>
+          <circle cx="30" cy="81" r="2.5" fill="#fff" stroke="#2e7d32" stroke-width="1.2"/>
+          <!-- green button -->
+          <circle cx="30" cy="45" r="9" fill="#1b5e20"/>
+          <circle cx="30" cy="45" r="6.5" fill="#66bb6a"/>
+        </svg>
+        <span>Push Button (NO)</span>
+      </div>
     </div>
 
     <div class="section">
@@ -189,6 +217,22 @@
           <circle cx="41" cy="81" r="2.5" fill="#fff" stroke="#333" stroke-width="1.2"/>
         </svg>
         <span>Multifunction Timer</span>
+      </div>
+      <div class="tool-item" :class="{ selected: selectedComponent === 'star-delta-timer' }" draggable="true" @dragstart="onDragStart($event, 'star-delta-timer')" @click="onComponentTap('star-delta-timer')">
+        <svg width="45" height="50" viewBox="0 0 60 90">
+          <rect x="10" y="5" width="40" height="80" rx="3" fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+          <rect x="14" y="24" width="32" height="42" rx="2" fill="#fff" stroke="#cfd8e3" stroke-width="1"/>
+          <circle cx="20" cy="33" r="3" fill="#4caf50"/>
+          <circle cx="30" cy="33" r="3" fill="#ffca28"/>
+          <circle cx="40" cy="33" r="3" fill="#29b6f6"/>
+          <text x="30" y="55" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a2733">Y∆</text>
+          <circle cx="19" cy="9" r="2.5" fill="#fff" stroke="#8B4513" stroke-width="1.2"/>
+          <circle cx="41" cy="9" r="2.5" fill="#fff" stroke="#333" stroke-width="1.2"/>
+          <circle cx="19" cy="81" r="2.5" fill="#fff" stroke="#1976d2" stroke-width="1.2"/>
+          <circle cx="30" cy="81" r="2.5" fill="#fff" stroke="#333" stroke-width="1.2"/>
+          <circle cx="41" cy="81" r="2.5" fill="#fff" stroke="#333" stroke-width="1.2"/>
+        </svg>
+        <span>Star-Delta Timer</span>
       </div>
     </div>
 

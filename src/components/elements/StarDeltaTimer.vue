@@ -23,22 +23,25 @@
     <rect class="timer-config" x="3" y="15" width="38" height="60" rx="2" fill="#fff" stroke="#cfd8e3" stroke-width="0.6"
           @click.stop="$emit('configure', element.id)"/>
 
-    <!-- Status LEDs -->
-    <circle cx="13" cy="24" r="2.5" :fill="supplied ? '#4caf50' : '#555'" :stroke="supplied ? '#2e7d32' : '#333'" stroke-width="0.3" pointer-events="none"/>
-    <circle v-if="supplied" cx="13" cy="24" r="3.4" fill="rgba(76,175,80,0.3)" stroke="none" pointer-events="none"/>
-    <circle cx="31" cy="24" r="2.5" :fill="output ? '#ffca28' : '#555'" :stroke="output ? '#f9a825' : '#333'" stroke-width="0.3" pointer-events="none"/>
-    <circle v-if="output" cx="31" cy="24" r="3.4" fill="rgba(255,202,40,0.35)" stroke="none" pointer-events="none"/>
-    <text x="13" y="33.5" text-anchor="middle" font-size="5" fill="#888" pointer-events="none" :transform="`rotate(${-rotation}, 13, 33.5)`">U/t</text>
-    <text x="31" y="33.5" text-anchor="middle" font-size="5" fill="#888" pointer-events="none" :transform="`rotate(${-rotation}, 31, 33.5)`">R</text>
+    <!-- Status LEDs: supply, star, delta -->
+    <circle cx="10" cy="24" r="2.5" :fill="supplied ? '#4caf50' : '#555'" :stroke="supplied ? '#2e7d32' : '#333'" stroke-width="0.3" pointer-events="none"/>
+    <circle v-if="supplied" cx="10" cy="24" r="3.4" fill="rgba(76,175,80,0.3)" stroke="none" pointer-events="none"/>
+    <circle cx="22" cy="24" r="2.5" :fill="inStar ? '#ffca28' : '#555'" :stroke="inStar ? '#f9a825' : '#333'" stroke-width="0.3" pointer-events="none"/>
+    <circle v-if="inStar" cx="22" cy="24" r="3.4" fill="rgba(255,202,40,0.35)" stroke="none" pointer-events="none"/>
+    <circle cx="34" cy="24" r="2.5" :fill="inDelta ? '#29b6f6' : '#555'" :stroke="inDelta ? '#0288d1' : '#333'" stroke-width="0.3" pointer-events="none"/>
+    <circle v-if="inDelta" cx="34" cy="24" r="3.4" fill="rgba(41,182,246,0.35)" stroke="none" pointer-events="none"/>
+    <text x="10" y="33.5" text-anchor="middle" font-size="5" fill="#888" pointer-events="none" :transform="`rotate(${-rotation}, 10, 33.5)`">U</text>
+    <text x="22" y="33.5" text-anchor="middle" font-size="5" fill="#888" pointer-events="none" :transform="`rotate(${-rotation}, 22, 33.5)`">Y</text>
+    <text x="34" y="33.5" text-anchor="middle" font-size="5" fill="#888" pointer-events="none" :transform="`rotate(${-rotation}, 34, 33.5)`">&#916;</text>
 
-    <!-- Function code and time -->
-    <text x="22" y="52" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a2733" pointer-events="none" :transform="`rotate(${-rotation}, 22, 52)`">{{ fnCode }}</text>
-    <text x="22" y="64" text-anchor="middle" font-size="8" fill="#555" pointer-events="none" :transform="`rotate(${-rotation}, 22, 64)`">{{ durationLabel }}</text>
-    <text x="22" y="73" text-anchor="middle" font-size="4.5" fill="#aaa" pointer-events="none" :transform="`rotate(${-rotation}, 22, 72)`">tap to set</text>
+    <!-- Current position and the two set times -->
+    <text x="22" y="48" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a2733" pointer-events="none" :transform="`rotate(${-rotation}, 22, 48)`">{{ positionSymbol }}</text>
+    <text x="22" y="58" text-anchor="middle" font-size="7.5" fill="#555" pointer-events="none" :transform="`rotate(${-rotation}, 22, 58)`">{{ starLabel }}</text>
+    <text x="22" y="67" text-anchor="middle" font-size="7.5" fill="#555" pointer-events="none" :transform="`rotate(${-rotation}, 22, 67)`">{{ deltaLabel }}</text>
+    <text x="22" y="73.5" text-anchor="middle" font-size="4.5" fill="#aaa" pointer-events="none" :transform="`rotate(${-rotation}, 22, 73.5)`">tap to set</text>
 
     <!-- Terminal labels -->
     <text x="9" y="10" text-anchor="middle" font-size="6" fill="#666" pointer-events="none" :transform="`rotate(${-rotation}, 9, 10)`">A1</text>
-    <text x="22" y="10" text-anchor="middle" font-size="6" fill="#666" pointer-events="none" :transform="`rotate(${-rotation}, 22, 10)`">B1</text>
     <text x="35" y="10" text-anchor="middle" font-size="6" fill="#666" pointer-events="none" :transform="`rotate(${-rotation}, 35, 10)`">15</text>
     <text x="9" y="87" text-anchor="middle" font-size="6" fill="#666" pointer-events="none" :transform="`rotate(${-rotation}, 9, 87)`">A2</text>
     <text x="22" y="87" text-anchor="middle" font-size="6" fill="#666" pointer-events="none" :transform="`rotate(${-rotation}, 22, 87)`">16</text>
@@ -80,13 +83,22 @@ const hovering = ref(false)
 const rotation = computed(() => props.element.rotation || 0)
 const isMounted = computed(() => !!props.element.state.mountedOn)
 const supplied = computed(() => props.element.state.timerSupplied || false)
-const output = computed(() => props.element.state.timerOutput || false)
-const fnCode = computed(() => props.element.state.timerFunction || 'E')
+const position = computed(() => props.element.state.starDeltaPosition || 'neutral')
+const inStar = computed(() => position.value === 'star')
+const inDelta = computed(() => position.value === 'delta')
 
-const durationLabel = computed(() => {
-  const d = props.element.state.timerDuration ?? 1
-  return d < 10 ? `${d.toFixed(1)}s` : `${Math.round(d)}s`
+const positionSymbol = computed(() => {
+  if (inStar.value) return 'Y'
+  if (inDelta.value) return 'Δ'
+  return '–'
 })
+
+const starLabel = computed(() => {
+  const t = props.element.state.starDuration ?? 5
+  return t < 10 ? `Y ${t.toFixed(1)}s` : `Y ${Math.round(t)}s`
+})
+
+const deltaLabel = computed(() => `Δ ${Math.round(props.element.state.deltaDelay ?? 100)}ms`)
 
 const transform = computed(() => {
   const { x, y } = props.element

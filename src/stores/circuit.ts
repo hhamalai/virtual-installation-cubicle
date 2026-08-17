@@ -169,10 +169,19 @@ const CABLE_CONFIGS = {
 interface TimerRuntime {
   supply: boolean
   control: boolean
-  phase: string // 'idle' | 'timing' | 'held' | 'pause' | 'on' | 'spent'
+  // Multifunction: 'idle' | 'timing' | 'held' | 'pause' | 'on' | 'spent'
+  // Star-delta:    'idle' | 'star' | 'transition' | 'delta'
+  phase: string
   handle: ReturnType<typeof setTimeout> | null
+  // Star-delta only: pending check that the supply has been gone long enough to release.
+  releaseHandle: ReturnType<typeof setTimeout> | null
 }
 const timerRuntimes = new Map<string, TimerRuntime>()
+
+// Star-delta starter constants.
+const STAR_DELTA_RELEASE_MS = 200
+const DEFAULT_STAR_SECONDS = 5
+const DEFAULT_DELTA_DELAY_MS = 100
 
 export function useCircuitStore() {
   const generateId = (): string => `el-${state.nextId++}`
@@ -195,6 +204,7 @@ export function useCircuitStore() {
       })
       const rt = timerRuntimes.get(id)
       if (rt?.handle) clearTimeout(rt.handle)
+      if (rt?.releaseHandle) clearTimeout(rt.releaseHandle)
       timerRuntimes.delete(id)
       state.elements.splice(index, 1)
       simulateCircuit()
@@ -442,7 +452,7 @@ export function useCircuitStore() {
 
   const setButtonPressed = (elementId: string, color: 'green' | 'red', pressed: boolean): void => {
     const element = state.elements.find(el => el.id === elementId)
-    if (!element || element.type !== 'button') return
+    if (!element || (element.type !== 'button' && element.type !== 'button-no')) return
 
     if (color === 'green') {
       element.state.greenPressed = pressed
@@ -455,7 +465,7 @@ export function useCircuitStore() {
   const getTimerRuntime = (id: string): TimerRuntime => {
     let rt = timerRuntimes.get(id)
     if (!rt) {
-      rt = { supply: false, control: false, phase: 'idle', handle: null }
+      rt = { supply: false, control: false, phase: 'idle', handle: null, releaseHandle: null }
       timerRuntimes.set(id, rt)
     }
     return rt
@@ -465,6 +475,13 @@ export function useCircuitStore() {
     if (rt.handle !== null) {
       clearTimeout(rt.handle)
       rt.handle = null
+    }
+  }
+
+  const clearReleaseHandle = (rt: TimerRuntime): void => {
+    if (rt.releaseHandle !== null) {
+      clearTimeout(rt.releaseHandle)
+      rt.releaseHandle = null
     }
   }
 
@@ -480,7 +497,13 @@ export function useCircuitStore() {
   // A scheduled delay finished: advance the timer's output/phase, then re-simulate.
   const onTimerElapsed = (elementId: string): void => {
     const el = state.elements.find(e => e.id === elementId)
-    if (!el || el.type !== 'timer') return
+    if (!el) return
+    if (el.type === 'star-delta-timer') {
+      onStarDeltaElapsed(el)
+      simulateCircuit()
+      return
+    }
+    if (el.type !== 'timer') return
     const rt = getTimerRuntime(elementId)
     const fn = el.state.timerFunction || 'E'
     const t = el.state.timerDuration || 1
@@ -516,6 +539,59 @@ export function useCircuitStore() {
         break
     }
     simulateCircuit()
+  }
+
+  // --- Star-delta starter ----------------------------------------------------
+  // star (t) -> neutral (changeover delay) -> delta, held until the supply has
+  // been gone for at least STAR_DELTA_RELEASE_MS.
+
+  const onStarDeltaElapsed = (el: Element): void => {
+    const rt = getTimerRuntime(el.id)
+    if (rt.phase === 'star') {
+      el.state.starDeltaPosition = 'neutral'
+      rt.phase = 'transition'
+      scheduleTimer(el.id, (el.state.deltaDelay ?? DEFAULT_DELTA_DELAY_MS) / 1000)
+    } else if (rt.phase === 'transition') {
+      el.state.starDeltaPosition = 'delta'
+      rt.phase = 'delta'
+    }
+  }
+
+  // The supply has gone; release only if it stays gone. A shorter dip leaves both
+  // the relay position and the running star period untouched.
+  const scheduleStarDeltaRelease = (elementId: string): void => {
+    const rt = getTimerRuntime(elementId)
+    clearReleaseHandle(rt)
+    rt.releaseHandle = setTimeout(() => {
+      rt.releaseHandle = null
+      const el = state.elements.find(e => e.id === elementId)
+      if (!el) return
+      clearTimerHandle(rt)
+      rt.phase = 'idle'
+      el.state.starDeltaPosition = 'neutral'
+      simulateCircuit()
+    }, STAR_DELTA_RELEASE_MS)
+  }
+
+  const evaluateStarDelta = (el: Element, supply: boolean): boolean => {
+    const rt = getTimerRuntime(el.id)
+    const before = el.state.starDeltaPosition || 'neutral'
+
+    el.state.timerSupplied = supply
+
+    if (supply && !rt.supply) {
+      clearReleaseHandle(rt)
+      if (rt.phase === 'idle') {
+        el.state.starDeltaPosition = 'star'
+        rt.phase = 'star'
+        scheduleTimer(el.id, el.state.starDuration ?? DEFAULT_STAR_SECONDS)
+      }
+    } else if (!supply && rt.supply) {
+      scheduleStarDeltaRelease(el.id)
+    }
+
+    rt.supply = supply
+    return (el.state.starDeltaPosition || 'neutral') !== before
   }
 
   // React to supply/control edges for one timer. Returns true if the output changed.
@@ -574,9 +650,21 @@ export function useCircuitStore() {
   const resetTimerRuntime = (id: string): void => {
     const rt = getTimerRuntime(id)
     clearTimerHandle(rt)
+    clearReleaseHandle(rt)
     rt.phase = 'idle'
     rt.supply = false
     rt.control = false
+  }
+
+  const setStarDeltaConfig = (elementId: string, updates: { starDuration?: number; deltaDelay?: number }): void => {
+    const el = state.elements.find(e => e.id === elementId)
+    if (!el || el.type !== 'star-delta-timer') return
+    if (updates.starDuration !== undefined) el.state.starDuration = updates.starDuration
+    if (updates.deltaDelay !== undefined) el.state.deltaDelay = updates.deltaDelay
+    // Like the multifunction timer, a settings change restarts from de-energised.
+    resetTimerRuntime(elementId)
+    el.state.starDeltaPosition = 'neutral'
+    simulateCircuit()
   }
 
   const setTimerConfig = (elementId: string, updates: { timerFunction?: string; timerDuration?: number }): void => {
@@ -836,6 +924,23 @@ export function useCircuitStore() {
             coilStateChanged = true
           }
         }
+
+        // Step relay: every coil pulse flips the latched contact. Only the rising
+        // edge counts, so holding the coil on leaves the contact where it is.
+        if (el.type === 'step-relay') {
+          const a1Term = el.terminals.find(t => t.name === 'A1')
+          const nTerm = el.terminals.find(t => t.name === 'N')
+
+          const coilEnergized =
+            ((a1Term?.energized || false) && isConnectedToNeutral(el.id, nTerm?.id)) ||
+            ((nTerm?.energized || false) && isConnectedToNeutral(el.id, a1Term?.id))
+
+          if (el.state.coilEnergized !== coilEnergized) {
+            if (coilEnergized) el.state.stepOutput = !el.state.stepOutput
+            el.state.coilEnergized = coilEnergized
+            coilStateChanged = true
+          }
+        }
       })
 
       // Evaluate multifunction timers: derive supply/control and react to edges.
@@ -850,6 +955,15 @@ export function useCircuitStore() {
             ((a2?.energized || false) && isConnectedToNeutral(el.id, a1?.id))
           const control = b1?.energized || false
           if (evaluateTimer(el, supply, control)) timerStateChanged = true
+        }
+
+        if (el.type === 'star-delta-timer') {
+          const a1 = el.terminals.find(t => t.name === 'A1')
+          const a2 = el.terminals.find(t => t.name === 'A2')
+          const supply =
+            ((a1?.energized || false) && isConnectedToNeutral(el.id, a2?.id)) ||
+            ((a2?.energized || false) && isConnectedToNeutral(el.id, a1?.id))
+          if (evaluateStarDelta(el, supply)) timerStateChanged = true
         }
       })
 
@@ -1084,16 +1198,30 @@ export function useCircuitStore() {
         if (!element.state.redPressed) conn.push(['R1', 'R2'])
         return conn
       }
+      case 'button-no':
+        // Single normally-open contact, closed only while held.
+        return element.state.greenPressed ? [['G1', 'G2']] : []
+      case 'step-relay':
+        // Latched contact: the coil pulse flips it, it stays put in between.
+        return element.state.stepOutput ? [['1', '2']] : []
       case 'timer':
         // Output changeover: R energized -> 15-18 (NO) closed; otherwise 15-16 (NC).
         return element.state.timerOutput ? [['15', '18']] : [['15', '16']]
+      case 'star-delta-timer':
+        // Changeover with a neutral centre: neither contact is made at rest.
+        if (element.state.starDeltaPosition === 'star') return [['15', '16']]
+        if (element.state.starDeltaPosition === 'delta') return [['15', '18']]
+        return []
       default:
         return []
     }
   }
 
   const stopAllTimers = (): void => {
-    timerRuntimes.forEach(rt => { if (rt.handle) clearTimeout(rt.handle) })
+    timerRuntimes.forEach(rt => {
+      if (rt.handle) clearTimeout(rt.handle)
+      if (rt.releaseHandle) clearTimeout(rt.releaseHandle)
+    })
     timerRuntimes.clear()
   }
 
@@ -1487,6 +1615,7 @@ export function useCircuitStore() {
     selectElement,
     setButtonPressed,
     setTimerConfig,
+    setStarDeltaConfig,
     startWiring,
     addControlPoint,
     cancelWiring,

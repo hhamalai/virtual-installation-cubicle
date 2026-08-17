@@ -107,6 +107,19 @@ export function createElementByType(type: string, id: string, x: number, y: numb
           { id: `${id}-4`, name: '4', localX: 23, localY: 90, connected: [], energized: false }
         ]
       }
+    // Step (impulse) relay: 30px wide x 90px tall. Coil A1 / N in the middle,
+    // one NO contact 1-2 that latches over, flipping on every coil pulse.
+    case 'step-relay':
+      return {
+        ...base,
+        state: { coilEnergized: false, stepOutput: false },
+        terminals: [
+          { id: `${id}-1`, name: '1', localX: 15, localY: 0, connected: [], energized: false },
+          { id: `${id}-A1`, name: 'A1', localX: 0, localY: 45, connected: [], energized: false },
+          { id: `${id}-N`, name: 'N', localX: 30, localY: 45, connected: [], energized: false },
+          { id: `${id}-2`, name: '2', localX: 15, localY: 90, connected: [], energized: false }
+        ]
+      }
     // Momentary push-button module (Hager SVN391 style): 30px wide x 90px tall.
     // Green pair G1-G2 is a normally-open contact (closes only while held);
     // red pair R1-R2 is a normally-closed contact (opens only while held).
@@ -121,6 +134,16 @@ export function createElementByType(type: string, id: string, x: number, y: numb
           { id: `${id}-R2`, name: 'R2', localX: 23, localY: 90, connected: [], energized: false, color: '#c62828' }
         ]
       }
+    // Single momentary push-button: one normally-open contact, closed while held.
+    case 'button-no':
+      return {
+        ...base,
+        state: { greenPressed: false },
+        terminals: [
+          { id: `${id}-G1`, name: 'G1', localX: 15, localY: 0, connected: [], energized: false, color: '#2e7d32' },
+          { id: `${id}-G2`, name: 'G2', localX: 15, localY: 90, connected: [], energized: false, color: '#2e7d32' }
+        ]
+      }
     // Multifunction time relay (Hager EZM100 style): 44px wide x 90px tall.
     // Top: A1 (supply L), B1 (control), 15 (output COM).
     // Bottom: A2 (supply N), 16 (output NC), 18 (output NO).
@@ -131,6 +154,20 @@ export function createElementByType(type: string, id: string, x: number, y: numb
         terminals: [
           { id: `${id}-A1`, name: 'A1', localX: 9, localY: 0, connected: [], energized: false, color: '#8B4513' },
           { id: `${id}-B1`, name: 'B1', localX: 22, localY: 0, connected: [], energized: false, color: '#ff9800' },
+          { id: `${id}-15`, name: '15', localX: 35, localY: 0, connected: [], energized: false },
+          { id: `${id}-A2`, name: 'A2', localX: 9, localY: 90, connected: [], energized: false, color: '#1976d2' },
+          { id: `${id}-16`, name: '16', localX: 22, localY: 90, connected: [], energized: false },
+          { id: `${id}-18`, name: '18', localX: 35, localY: 90, connected: [], energized: false }
+        ]
+      }
+    // Star-delta starter timer: 44px wide x 90px tall DIN module.
+    // Top: A1 (supply L), 15 (output common). Bottom: A2 (supply N), 16 (star), 18 (delta).
+    case 'star-delta-timer':
+      return {
+        ...base,
+        state: { starDuration: 5, deltaDelay: 100, starDeltaPosition: 'neutral', timerSupplied: false },
+        terminals: [
+          { id: `${id}-A1`, name: 'A1', localX: 9, localY: 0, connected: [], energized: false, color: '#8B4513' },
           { id: `${id}-15`, name: '15', localX: 35, localY: 0, connected: [], energized: false },
           { id: `${id}-A2`, name: 'A2', localX: 9, localY: 90, connected: [], energized: false, color: '#1976d2' },
           { id: `${id}-16`, name: '16', localX: 22, localY: 90, connected: [], energized: false },

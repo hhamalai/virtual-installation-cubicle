@@ -22,39 +22,41 @@
     <!-- Face plate -->
     <rect x="1" y="14" width="28" height="62" rx="1" fill="#fafafa" stroke="#ddd" stroke-width="0.5"/>
 
-    <!-- Green NO contact (left column, terminals G1-G2) -->
-    <line x1="7" y1="13" x2="7" y2="33" stroke="#333" stroke-width="0.8"/>
-    <line x1="7" y1="57" x2="7" y2="77" stroke="#333" stroke-width="0.8"/>
-    <circle cx="7" cy="33" r="1.4" fill="#333"/>
-    <circle cx="7" cy="57" r="1.4" fill="#333"/>
-    <line x1="7" y1="57" :x2="greenPressed ? 7 : 11" :y2="greenPressed ? 33 : 37"
+    <!-- Green NO contact (terminals G1-G2) -->
+    <line :x1="greenX" y1="13" :x2="greenX" y2="33" stroke="#333" stroke-width="0.8"/>
+    <line :x1="greenX" y1="57" :x2="greenX" y2="77" stroke="#333" stroke-width="0.8"/>
+    <circle :cx="greenX" cy="33" r="1.4" fill="#333"/>
+    <circle :cx="greenX" cy="57" r="1.4" fill="#333"/>
+    <line :x1="greenX" y1="57" :x2="greenPressed ? greenX : greenX + 4" :y2="greenPressed ? 33 : 37"
           :stroke="greenPressed ? '#2e7d32' : '#bbb'" stroke-width="1.6" stroke-linecap="round"/>
 
     <!-- Red NC contact (right column, terminals R1-R2) -->
-    <line x1="23" y1="13" x2="23" y2="33" stroke="#333" stroke-width="0.8"/>
-    <line x1="23" y1="57" x2="23" y2="77" stroke="#333" stroke-width="0.8"/>
-    <circle cx="23" cy="33" r="1.4" fill="#333"/>
-    <circle cx="23" cy="57" r="1.4" fill="#333"/>
-    <line x1="23" y1="57" :x2="redPressed ? 19 : 23" :y2="redPressed ? 37 : 33"
-          :stroke="redPressed ? '#bbb' : '#c62828'" stroke-width="1.6" stroke-linecap="round"/>
+    <template v-if="hasRed">
+      <line x1="23" y1="13" x2="23" y2="33" stroke="#333" stroke-width="0.8"/>
+      <line x1="23" y1="57" x2="23" y2="77" stroke="#333" stroke-width="0.8"/>
+      <circle cx="23" cy="33" r="1.4" fill="#333"/>
+      <circle cx="23" cy="57" r="1.4" fill="#333"/>
+      <line x1="23" y1="57" :x2="redPressed ? 19 : 23" :y2="redPressed ? 37 : 33"
+            :stroke="redPressed ? '#bbb' : '#c62828'" stroke-width="1.6" stroke-linecap="round"/>
+    </template>
 
     <!-- Green push button (momentary NO) -->
     <g class="press-btn" @mousedown.stop.prevent="startPress('green')" @touchstart.stop.prevent="startPress('green')">
-      <circle cx="7" cy="45" r="7" fill="#1b5e20"/>
-      <circle cx="7" :cy="greenPressed ? 45.5 : 45" :r="greenPressed ? 4.5 : 5.5"
+      <circle :cx="greenX" cy="45" r="7" fill="#1b5e20"/>
+      <circle :cx="greenX" :cy="greenPressed ? 45.5 : 45" :r="greenPressed ? 4.5 : 5.5"
               :fill="greenPressed ? '#43a047' : '#66bb6a'" stroke="#1b5e20" stroke-width="0.5"/>
     </g>
 
     <!-- Red push button (momentary NC) -->
-    <g class="press-btn" @mousedown.stop.prevent="startPress('red')" @touchstart.stop.prevent="startPress('red')">
+    <g v-if="hasRed" class="press-btn" @mousedown.stop.prevent="startPress('red')" @touchstart.stop.prevent="startPress('red')">
       <circle cx="23" cy="45" r="7" fill="#b71c1c"/>
       <circle cx="23" :cy="redPressed ? 45.5 : 45" :r="redPressed ? 4.5 : 5.5"
               :fill="redPressed ? '#e53935' : '#ef5350'" stroke="#b71c1c" stroke-width="0.5"/>
     </g>
 
     <!-- Labels -->
-    <text x="7" y="10" text-anchor="middle" font-size="4.5" fill="#2e7d32" :transform="`rotate(${-rotation}, 7, 10)`">NO</text>
-    <text x="23" y="10" text-anchor="middle" font-size="4.5" fill="#c62828" :transform="`rotate(${-rotation}, 23, 10)`">NC</text>
+    <text :x="greenX" y="10" text-anchor="middle" font-size="4.5" fill="#2e7d32" :transform="`rotate(${-rotation}, ${greenX}, 10)`">NO</text>
+    <text v-if="hasRed" x="23" y="10" text-anchor="middle" font-size="4.5" fill="#c62828" :transform="`rotate(${-rotation}, 23, 10)`">NC</text>
 
     <!-- Delete button -->
     <g v-if="hovering" class="delete-btn" :transform="`rotate(${-rotation}, 15, 45)`" @click.stop="$emit('delete')">
@@ -92,6 +94,9 @@ const emit = defineEmits<{
 const hovering = ref(false)
 const rotation = computed(() => props.element.rotation || 0)
 const isMounted = computed(() => !!props.element.state.mountedOn)
+// The single-button variant has only the green NO contact, centred on the module.
+const hasRed = computed(() => props.element.type !== 'button-no')
+const greenX = computed(() => (hasRed.value ? 7 : 15))
 const greenPressed = computed(() => props.element.state.greenPressed || false)
 const redPressed = computed(() => props.element.state.redPressed || false)
 

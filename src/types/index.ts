@@ -44,6 +44,10 @@ export interface DinMountInfo {
   position: number   // X position on the rail
 }
 
+// Output relay of the star-delta starter: it rests in the neutral centre and is
+// only in star or delta while the corresponding contact is made.
+export type StarDeltaPosition = 'neutral' | 'star' | 'delta'
+
 export interface ElementState {
   on?: boolean
   on1?: boolean
@@ -53,6 +57,8 @@ export interface ElementState {
   position2?: number
   crossed?: boolean
   coilEnergized?: boolean
+  // For the step (impulse) relay: latched contact state, flipped by each coil pulse
+  stepOutput?: boolean
   // For push buttons - which momentary buttons are held down
   greenPressed?: boolean
   redPressed?: boolean
@@ -61,6 +67,10 @@ export interface ElementState {
   timerDuration?: number   // seconds (0.1 - 60)
   timerOutput?: boolean    // output relay R state
   timerSupplied?: boolean  // supply present (green LED)
+  // For the star-delta starter timer
+  starDuration?: number    // star period, seconds (0.1 - 60)
+  deltaDelay?: number      // star-to-delta changeover, milliseconds (50 - 150)
+  starDeltaPosition?: StarDeltaPosition
   ports?: JunctionBoxPort[]
   slots?: JunctionBoxSlot[]
   // For cable bundles - which junction box slots they're docked to

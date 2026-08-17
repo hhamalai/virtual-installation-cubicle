@@ -169,40 +169,74 @@
       Scroll to zoom • Middle-click to pan • R to rotate • Del to delete • Drag to select multiple
     </div>
 
-    <!-- Multifunction timer settings popup -->
+    <!-- Timer settings popup -->
     <div v-if="configTimer" class="timer-config-overlay" @click.self="configTimerId = null">
       <div class="timer-config-dialog">
         <div class="tc-header">
-          <span>Timer settings</span>
+          <span>{{ isStarDelta ? 'Star-delta settings' : 'Timer settings' }}</span>
           <button class="tc-close" aria-label="Close" @click="configTimerId = null">✕</button>
         </div>
 
-        <div class="tc-label">Function</div>
-        <div class="tc-functions">
-          <button
-            v-for="f in TIMER_FUNCTIONS"
-            :key="f.code"
-            type="button"
-            :class="{ active: (configTimer.state.timerFunction || 'E') === f.code }"
-            @click="setTimerConfig(configTimerId!, { timerFunction: f.code })"
-          >
-            <b>{{ f.code }}</b><span>{{ f.name }}</span>
-          </button>
-        </div>
+        <template v-if="isStarDelta">
+          <div class="tc-label">Star time: <strong>{{ starDurationLabel }}</strong></div>
+          <input
+            class="tc-slider"
+            type="range"
+            min="0.1"
+            max="60"
+            step="0.1"
+            :value="configTimer.state.starDuration ?? 5"
+            @input="onStarDurationInput"
+          />
+          <div class="tc-range-ends"><span>0.1 s</span><span>60 s</span></div>
 
-        <p class="tc-desc">{{ activeTimerFnDesc }}</p>
+          <div class="tc-label">Star → delta delay: <strong>{{ deltaDelayLabel }}</strong></div>
+          <input
+            class="tc-slider"
+            type="range"
+            min="50"
+            max="150"
+            step="5"
+            :value="configTimer.state.deltaDelay ?? 100"
+            @input="onDeltaDelayInput"
+          />
+          <div class="tc-range-ends"><span>50 ms</span><span>150 ms</span></div>
 
-        <div class="tc-label">Time delay: <strong>{{ timerDurationLabel }}</strong></div>
-        <input
-          class="tc-slider"
-          type="range"
-          min="0.1"
-          max="60"
-          step="0.1"
-          :value="configTimer.state.timerDuration ?? 1"
-          @input="onTimerDurationInput"
-        />
-        <div class="tc-range-ends"><span>0.1 s</span><span>60 s</span></div>
+          <p class="tc-desc">
+            The output rests in the neutral centre. On supply it goes to star (15–16)
+            for the star time, back to neutral for the changeover delay, then to delta
+            (15–18), where it stays until the supply is interrupted for at least 200 ms.
+          </p>
+        </template>
+
+        <template v-else>
+          <div class="tc-label">Function</div>
+          <div class="tc-functions">
+            <button
+              v-for="f in TIMER_FUNCTIONS"
+              :key="f.code"
+              type="button"
+              :class="{ active: (configTimer.state.timerFunction || 'E') === f.code }"
+              @click="setTimerConfig(configTimerId!, { timerFunction: f.code })"
+            >
+              <b>{{ f.code }}</b><span>{{ f.name }}</span>
+            </button>
+          </div>
+
+          <p class="tc-desc">{{ activeTimerFnDesc }}</p>
+
+          <div class="tc-label">Time delay: <strong>{{ timerDurationLabel }}</strong></div>
+          <input
+            class="tc-slider"
+            type="range"
+            min="0.1"
+            max="60"
+            step="0.1"
+            :value="configTimer.state.timerDuration ?? 1"
+            @input="onTimerDurationInput"
+          />
+          <div class="tc-range-ends"><span>0.1 s</span><span>60 s</span></div>
+        </template>
       </div>
     </div>
   </div>
@@ -225,8 +259,10 @@ import Switch66 from './elements/Switch66.vue'
 import Switch7 from './elements/Switch7.vue'
 import Cable from './wiring/Cable.vue'
 import Relay from './elements/Relay.vue'
+import StepRelay from './elements/StepRelay.vue'
 import PushButton from './elements/PushButton.vue'
 import MultiTimer from './elements/MultiTimer.vue'
+import StarDeltaTimer from './elements/StarDeltaTimer.vue'
 import JunctionBox from './elements/JunctionBox.vue'
 import DistributionBoard from './elements/DistributionBoard.vue'
 
@@ -309,6 +345,25 @@ const activeTimerFnDesc = computed(() => {
   return TIMER_FUNCTIONS.find(f => f.code === code)?.desc || ''
 })
 
+const isStarDelta = computed(() => configTimer.value?.type === 'star-delta-timer')
+
+const starDurationLabel = computed(() => {
+  const t = configTimer.value?.state.starDuration ?? 5
+  return t < 10 ? `${t.toFixed(1)} s` : `${Math.round(t)} s`
+})
+
+const deltaDelayLabel = computed(() => `${Math.round(configTimer.value?.state.deltaDelay ?? 100)} ms`)
+
+const onStarDurationInput = (event: Event): void => {
+  if (!configTimerId.value) return
+  setStarDeltaConfig(configTimerId.value, { starDuration: parseFloat((event.target as HTMLInputElement).value) })
+}
+
+const onDeltaDelayInput = (event: Event): void => {
+  if (!configTimerId.value) return
+  setStarDeltaConfig(configTimerId.value, { deltaDelay: parseFloat((event.target as HTMLInputElement).value) })
+}
+
 // Rectangular selection state
 const isSelecting = ref(false)
 const selectionStart = ref<Point>({ x: 0, y: 0 })
@@ -346,6 +401,7 @@ const {
   toggleSwitch,
   setButtonPressed,
   setTimerConfig,
+  setStarDeltaConfig,
   rotateElement,
   startWiring,
   addControlPoint,
@@ -420,8 +476,11 @@ const componentMap: Record<string, Component> = {
   'relay-no-no': Relay,
   'relay-no-nc': Relay,
   'relay-nc-nc': Relay,
+  'step-relay': StepRelay,
   'button': PushButton,
+  'button-no': PushButton,
   'timer': MultiTimer,
+  'star-delta-timer': StarDeltaTimer,
   'junction-box': JunctionBox,
   'distribution-board': DistributionBoard
 }
@@ -910,10 +969,12 @@ const DIN_RAIL_HEIGHT = 12
 
 // Check if element mounts on a DIN rail (relays, push-button and timer modules)
 const isDinMountable = (type: string): boolean => {
-  return type.startsWith('relay-') || type === 'button' || type === 'timer'
+  return type.startsWith('relay-') || type === 'step-relay' || type.startsWith('button') ||
+    type === 'timer' || type === 'star-delta-timer'
 }
 
-const moduleWidth = (type: string): number => (type === 'timer' ? 44 : RELAY_WIDTH)
+const moduleWidth = (type: string): number =>
+  (type === 'timer' || type === 'star-delta-timer' ? 44 : RELAY_WIDTH)
 
 // Find the closest DIN rail in any distribution board to a given position
 const findClosestDinRail = (x: number, y: number, elementWidth: number): { boardId: string; railId: string; railY: number; boardX: number; boardY: number } | null => {
