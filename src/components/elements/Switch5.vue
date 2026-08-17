@@ -13,34 +13,35 @@
     <text class="part-label" x="32" y="-13" text-anchor="middle" font-size="9" fill="#999"
           :transform="`rotate(${-rotation}, 32, -13)`">5</text>
 
-    <!-- First switch (top) -->
+    <!-- Common feed: the incoming line both gangs switch from -->
+    <line x1="0" y1="32" x2="14" y2="32" stroke="#333" stroke-width="2"/>
+    <circle cx="14" cy="32" r="4" fill="#333"/>
+
+    <!-- Gang 1 (top output) -->
     <g class="switch-unit">
-      <circle cx="10" cy="10" r="4" fill="#333"/>
-      <circle cx="50" cy="10" r="4" fill="#333"/>
-      <line x1="10" y1="10"
-            :x2="element.state.on1 ? 50 : 35" :y2="element.state.on1 ? 10 : 0"
+      <circle cx="48" cy="10" r="3.5" fill="#666"/>
+      <line x1="48" y1="10" x2="60" y2="10" stroke="#333" stroke-width="2"/>
+      <line x1="14" y1="32"
+            :x2="element.state.on1 ? 48 : 45" :y2="element.state.on1 ? 10 : 21"
             stroke="#333" stroke-width="3" stroke-linecap="round"/>
-      <text x="30" y="22" text-anchor="middle" font-size="7" fill="#666"
-            :transform="`rotate(${-rotation}, 30, 22)`">{{ element.state.on1 ? 'ON' : 'OFF' }}</text>
-      <!-- Toggle area for switch 1 -->
-      <rect x="0" y="-5" width="60" height="35" fill="transparent" class="toggle-area"
+      <text x="26" y="8" text-anchor="middle" font-size="7" fill="#666"
+            :transform="`rotate(${-rotation}, 26, 8)`">{{ element.state.on1 ? 'ON' : 'OFF' }}</text>
+      <!-- Toggle area for gang 1 -->
+      <rect x="16" y="-8" width="46" height="32" fill="transparent" class="toggle-area"
             @click.stop="$emit('toggle', 0)"/>
     </g>
 
-    <!-- Divider line -->
-    <line x1="0" y1="37" x2="65" y2="37" stroke="#ccc" stroke-width="1" stroke-dasharray="3,2"/>
-
-    <!-- Second switch (bottom) -->
+    <!-- Gang 2 (bottom output) -->
     <g class="switch-unit">
-      <circle cx="10" cy="55" r="4" fill="#333"/>
-      <circle cx="50" cy="55" r="4" fill="#333"/>
-      <line x1="10" y1="55"
-            :x2="element.state.on2 ? 50 : 35" :y2="element.state.on2 ? 55 : 45"
+      <circle cx="48" cy="55" r="3.5" fill="#666"/>
+      <line x1="48" y1="55" x2="60" y2="55" stroke="#333" stroke-width="2"/>
+      <line x1="14" y1="32"
+            :x2="element.state.on2 ? 48 : 45" :y2="element.state.on2 ? 55 : 44"
             stroke="#333" stroke-width="3" stroke-linecap="round"/>
-      <text x="30" y="67" text-anchor="middle" font-size="7" fill="#666"
-            :transform="`rotate(${-rotation}, 30, 67)`">{{ element.state.on2 ? 'ON' : 'OFF' }}</text>
-      <!-- Toggle area for switch 2 -->
-      <rect x="0" y="40" width="60" height="35" fill="transparent" class="toggle-area"
+      <text x="26" y="70" text-anchor="middle" font-size="7" fill="#666"
+            :transform="`rotate(${-rotation}, 26, 70)`">{{ element.state.on2 ? 'ON' : 'OFF' }}</text>
+      <!-- Toggle area for gang 2 -->
+      <rect x="16" y="41" width="46" height="32" fill="transparent" class="toggle-area"
             @click.stop="$emit('toggle', 1)"/>
     </g>
 

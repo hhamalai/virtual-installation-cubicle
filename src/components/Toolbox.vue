@@ -57,8 +57,9 @@
           <circle cx="45" cy="8" r="2.5" fill="#666"/>
           <circle cx="45" cy="32" r="2.5" fill="#666"/>
           <line x1="10" y1="20" x2="45" y2="8" stroke="#333" stroke-width="2"/>
+          <line x1="10" y1="20" x2="40" y2="27" stroke="#333" stroke-width="2"/>
         </svg>
-        <span>Type 5 (Two-way)</span>
+        <span>Type 5 (Double on/off)</span>
       </div>
       <div class="tool-item" :class="{ selected: selectedComponent === 'switch6' }" draggable="true" @dragstart="onDragStart($event, 'switch6')" @click="onComponentTap('switch6')">
         <svg width="40" height="35" viewBox="0 0 60 40">

@@ -44,14 +44,14 @@ export function createElementByType(type: string, id: string, x: number, y: numb
           { id: `${id}-OUT`, name: 'OUT', localX: 60, localY: 20, connected: [], energized: false }
         ]
       }
+    // Two-gang switch: one incoming line feeds two independently switched outputs.
     case 'switch5':
       return {
         ...base,
         state: { on1: false, on2: false },
         terminals: [
-          { id: `${id}-IN1`, name: 'IN1', localX: 0, localY: 10, connected: [], energized: false },
+          { id: `${id}-IN`, name: 'IN', localX: 0, localY: 32, connected: [], energized: false },
           { id: `${id}-OUT1`, name: 'OUT1', localX: 60, localY: 10, connected: [], energized: false },
-          { id: `${id}-IN2`, name: 'IN2', localX: 0, localY: 55, connected: [], energized: false },
           { id: `${id}-OUT2`, name: 'OUT2', localX: 60, localY: 55, connected: [], energized: false }
         ]
       }

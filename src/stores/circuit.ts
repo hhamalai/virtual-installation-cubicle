@@ -18,14 +18,56 @@ const emptyDoc = (name: string): CircuitDoc => ({
   nextId: 1
 })
 
-const docFromParsed = (raw: Partial<CircuitDoc>, fallbackName: string): CircuitDoc => ({
-  id: typeof raw.id === 'string' ? raw.id : newDocId(),
-  name: typeof raw.name === 'string' && raw.name.trim() ? raw.name : fallbackName,
-  elements: Array.isArray(raw.elements) ? raw.elements : [],
-  cables: Array.isArray(raw.cables) ? raw.cables : [],
-  drawnCables: Array.isArray(raw.drawnCables) ? raw.drawnCables : [],
-  nextId: typeof raw.nextId === 'number' && raw.nextId > 0 ? raw.nextId : 1
-})
+// Type 5 switches used to have two isolated poles (IN1/OUT1, IN2/OUT2). They are
+// now what the real part is: one incoming line feeding two switched outputs, so
+// both old inputs collapse onto the single IN terminal and anything wired to
+// either of them follows.
+export const migrateSwitch5 = (elements: Element[], cables: Cable[]): void => {
+  for (const element of elements) {
+    if (element.type !== 'switch5') continue
+
+    const legacyInputs = element.terminals.filter(t => t.name === 'IN1' || t.name === 'IN2')
+    if (legacyInputs.length === 0) continue
+
+    const legacyIds = new Set(legacyInputs.map(t => t.id))
+    const inputId = `${element.id}-IN`
+
+    element.terminals = [
+      {
+        id: inputId,
+        name: 'IN',
+        localX: 0,
+        localY: 32,
+        connected: legacyInputs.flatMap(t => t.connected),
+        energized: false
+      },
+      ...element.terminals.filter(t => !legacyIds.has(t.id))
+    ]
+
+    for (const cable of cables) {
+      for (const wire of cable.wires) {
+        for (const endpoint of [wire.from, wire.to]) {
+          if (endpoint?.elementId === element.id && legacyIds.has(endpoint.terminalId)) {
+            endpoint.terminalId = inputId
+          }
+        }
+      }
+    }
+  }
+}
+
+const docFromParsed = (raw: Partial<CircuitDoc>, fallbackName: string): CircuitDoc => {
+  const doc: CircuitDoc = {
+    id: typeof raw.id === 'string' ? raw.id : newDocId(),
+    name: typeof raw.name === 'string' && raw.name.trim() ? raw.name : fallbackName,
+    elements: Array.isArray(raw.elements) ? raw.elements : [],
+    cables: Array.isArray(raw.cables) ? raw.cables : [],
+    drawnCables: Array.isArray(raw.drawnCables) ? raw.drawnCables : [],
+    nextId: typeof raw.nextId === 'number' && raw.nextId > 0 ? raw.nextId : 1
+  }
+  migrateSwitch5(doc.elements, doc.cables)
+  return doc
+}
 
 const loadLegacyDoc = (): CircuitDoc | null => {
   const saved = localStorage.getItem(LEGACY_STATE_KEY)
@@ -1003,8 +1045,8 @@ export function useCircuitStore() {
         return element.state.on ? [['IN', 'OUT']] : []
       case 'switch5': {
         const conn5: [string, string][] = []
-        if (element.state.on1) conn5.push(['IN1', 'OUT1'])
-        if (element.state.on2) conn5.push(['IN2', 'OUT2'])
+        if (element.state.on1) conn5.push(['IN', 'OUT1'])
+        if (element.state.on2) conn5.push(['IN', 'OUT2'])
         return conn5
       }
       case 'switch6':
@@ -1146,13 +1188,15 @@ export function useCircuitStore() {
     return buildCircuitFile(activeDocName(), state.elements, state.cables, state.drawnCables)
   }
 
-  const importCircuitFile = (file: CircuitFile, name?: string): CircuitDoc =>
-    createDoc(name || file.name, {
+  const importCircuitFile = (file: CircuitFile, name?: string): CircuitDoc => {
+    migrateSwitch5(file.elements, file.cables)
+    return createDoc(name || file.name, {
       elements: file.elements,
       cables: file.cables,
       drawnCables: file.drawnCables,
       nextId: nextIdFor(file.elements, file.cables)
     })
+  }
 
   // Cable drawing functions
   const startCableDrawing = (cableType: 'mmj3' | 'mmj5' | 'omm', startPoint: Point): void => {
