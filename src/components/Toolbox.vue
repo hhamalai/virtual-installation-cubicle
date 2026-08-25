@@ -95,6 +95,15 @@
         </svg>
         <span>Type 7 (Cross)</span>
       </div>
+      <div class="tool-item" :class="{ selected: selectedComponent === 'switch8' }" draggable="true" @dragstart="onDragStart($event, 'switch8')" @click="onComponentTap('switch8')">
+        <svg width="40" height="35" viewBox="0 0 60 40">
+          <circle cx="10" cy="20" r="3" fill="#333"/>
+          <circle cx="45" cy="8" r="2.5" fill="#666"/>
+          <circle cx="45" cy="32" r="2.5" fill="#666"/>
+          <line x1="10" y1="20" x2="33" y2="20" stroke="#333" stroke-width="2"/>
+        </svg>
+        <span>Type 8 (1-0-3)</span>
+      </div>
     </div>
 
     <div class="section">

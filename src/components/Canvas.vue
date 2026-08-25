@@ -257,6 +257,7 @@ import Switch5 from './elements/Switch5.vue'
 import Switch6 from './elements/Switch6.vue'
 import Switch66 from './elements/Switch66.vue'
 import Switch7 from './elements/Switch7.vue'
+import Switch8 from './elements/Switch8.vue'
 import Cable from './wiring/Cable.vue'
 import Relay from './elements/Relay.vue'
 import StepRelay from './elements/StepRelay.vue'
@@ -473,6 +474,7 @@ const componentMap: Record<string, Component> = {
   'switch6': Switch6,
   'switch66': Switch66,
   'switch7': Switch7,
+  'switch8': Switch8,
   'relay-no-no': Relay,
   'relay-no-nc': Relay,
   'relay-nc-nc': Relay,
@@ -635,7 +637,7 @@ const onMouseDown = (event: MouseEvent): void => {
   // Left mouse button on empty canvas - start selection rectangle
   if (event.button === 0 && !wiringMode.value) {
     const target = event.target as HTMLElement
-    const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .push-button, .timer, .junction-box, .distribution-board')
+    const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .switch8, .power-input, .light, .relay, .push-button, .timer, .junction-box, .distribution-board')
 
     if (!clickedOnElement && !target.closest('.terminal')) {
       const pos = getSvgPoint(event.clientX, event.clientY)
@@ -1314,7 +1316,7 @@ const onCanvasClick = (event: MouseEvent): void => {
   const target = event.target as HTMLElement
 
   // Check if clicked on an element (not empty canvas)
-  const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .power-input, .light, .relay, .push-button, .timer, .junction-box, .distribution-board')
+  const clickedOnElement = target.closest('.switch1, .switch5, .switch6, .switch66, .switch7, .switch8, .power-input, .light, .relay, .push-button, .timer, .junction-box, .distribution-board')
 
   // Handle tap-to-place component (for touch devices)
   if (props.selectedComponent && !clickedOnElement && !target.closest('.terminal')) {

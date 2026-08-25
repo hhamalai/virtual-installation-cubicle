@@ -20,6 +20,7 @@ reaches the supply neutral.
 | 5 | One feed, two outputs switched independently | IN, OUT1, OUT2 |
 | 6 | Changeover (two-way): COM follows L1 or L2 | COM, L1, L2 |
 | 6+6 | Two changeover switches on one plate | COM1/L1A/L1B, COM2/L2A/L2B |
+| 8 | 1-0-3: COM follows L1, L3, or neither (off) | COM, L1, L3 |
 | 7 | Cross (intermediate): swaps the two travellers | IN1/IN2, OUT1/OUT2 |
 
 **Relays** — two-pole, coil on A1/N, contacts 1-2 and 3-4. Available as NO-NO, NO-NC

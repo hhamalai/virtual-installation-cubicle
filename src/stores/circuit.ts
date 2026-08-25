@@ -438,6 +438,12 @@ export function useCircuitStore() {
       case 'switch6':
         element.state.position = element.state.position === 0 ? 1 : 0
         break
+      case 'switch8':
+        // switchIndex carries the target position directly (1, 0, or 3)
+        if (switchIndex === 1 || switchIndex === 0 || switchIndex === 3) {
+          element.state.position = switchIndex
+        }
+        break
       case 'switch66':
         // Toggle specific switch based on index (0 or 1)
         if (switchIndex === 0) {
@@ -1165,6 +1171,11 @@ export function useCircuitStore() {
       }
       case 'switch6':
         return element.state.position === 0 ? [['COM', 'L1']] : [['COM', 'L2']]
+      case 'switch8': {
+        if (element.state.position === 1) return [['COM', 'L1']]
+        if (element.state.position === 3) return [['COM', 'L3']]
+        return []
+      }
       case 'switch66': {
         const conn: [string, string][] = []
         if (element.state.position1 === 0) conn.push(['COM1', 'L1A'])

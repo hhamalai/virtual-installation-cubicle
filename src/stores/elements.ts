@@ -65,6 +65,17 @@ export function createElementByType(type: string, id: string, x: number, y: numb
           { id: `${id}-L2`, name: 'L2', localX: 60, localY: 40, connected: [], energized: false }
         ]
       }
+    // Three-position changeover switch: 1 connects COM to L1, 3 connects COM to L3, 0 cuts power.
+    case 'switch8':
+      return {
+        ...base,
+        state: { position: 0 },
+        terminals: [
+          { id: `${id}-COM`, name: 'COM', localX: 0, localY: 20, connected: [], energized: false },
+          { id: `${id}-L1`, name: 'L1', localX: 60, localY: 0, connected: [], energized: false },
+          { id: `${id}-L3`, name: 'L3', localX: 60, localY: 40, connected: [], energized: false }
+        ]
+      }
     case 'switch66':
       return {
         ...base,
